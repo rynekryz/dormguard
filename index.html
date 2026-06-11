@@ -11,8 +11,8 @@
       <meta name="apple-mobile-web-app-title" content="DormGuard" />
       <meta name="color-scheme" content="dark light">
       <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet">
-      <link rel="preload" href="https://cdn.jsdelivr.net/gh/IdreesInc/Monocraft@main/dist/Monocraft-ttf/Monocraft.ttf" as="font" type="font/ttf" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&display=swap" rel="stylesheet">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
       <link rel="stylesheet" href="ui.css">
       <script src="https://unpkg.com/@capacitor/core@latest/dist/capacitor.js"></script>
       <script defer src="setup.js"></script>
@@ -31,42 +31,77 @@
       </script>
    </head>
    <body class="light">
+      <div id="splash">
+         <md-circular-progress indeterminate></md-circular-progress>
+         <p class="splash-hint">TAP! TAP! TAP!</p>
+      </div>
+      <div class="home-bg">
+         <span class="material-symbols-rounded" style="top:5%;  left:72%; --r:20deg;  animation-delay:0.5s">home</span>
+         <span class="material-symbols-rounded" style="top:8%;  left:40%; --r:-8deg;  animation-delay:1.3s">shield</span>
+         <span class="material-symbols-rounded" style="top:13%; left:88%; --r:-10deg; animation-delay:1s">sensor_door</span>
+         <span class="material-symbols-rounded" style="top:18%; left:3%;  --r:25deg;  animation-delay:1.5s">security</span>
+         <span class="material-symbols-rounded" style="top:22%; left:55%; --r:15deg;  animation-delay:0.7s">key</span>
+         <span class="material-symbols-rounded" style="top:28%; left:80%; --r:-20deg; animation-delay:0.8s">lock_open</span>
+         <span class="material-symbols-rounded" style="top:33%; left:20%; --r:10deg;  animation-delay:2s">verified_user</span>
+         <span class="material-symbols-rounded" style="top:40%; left:68%; --r:-12deg; animation-delay:1.6s">camera_indoor</span>
+         <span class="material-symbols-rounded" style="top:46%; left:12%; --r:10deg;  animation-delay:2s">notifications</span>
+         <span class="material-symbols-rounded" style="top:52%; left:88%; --r:22deg;  animation-delay:0.4s">doorbell</span>
+         <span class="material-symbols-rounded" style="top:58%; left:35%; --r:-15deg; animation-delay:1.9s">home_work</span>
+         <span class="material-symbols-rounded" style="top:60%; left:65%; --r:-25deg; animation-delay:0.3s">lock</span>
+         <span class="material-symbols-rounded" style="top:68%; left:5%;  --r:18deg;  animation-delay:1.1s">shield</span>
+         <span class="material-symbols-rounded" style="top:73%; left:78%; --r:-8deg;  animation-delay:1.8s">key</span>
+         <span class="material-symbols-rounded" style="top:76%; left:30%; --r:15deg;  animation-delay:1.2s">home</span>
+         <span class="material-symbols-rounded" style="top:80%; left:55%; --r:-22deg; animation-delay:0.9s">security</span>
+         <span class="material-symbols-rounded" style="top:83%; left:85%; --r:12deg;  animation-delay:1.7s">sensor_door</span>
+         <span class="material-symbols-rounded" style="top:86%; left:8%;  --r:30deg;  animation-delay:0.6s">verified_user</span>
+         <span class="material-symbols-rounded" style="top:89%; left:45%; --r:-18deg; animation-delay:2.2s">doorbell</span>
+         <span class="material-symbols-rounded" style="top:92%; left:72%; --r:14deg;  animation-delay:1.4s">camera_indoor</span>
+         <span class="material-symbols-rounded" style="top:95%; left:20%; --r:-20deg; animation-delay:1.1s">notifications</span>
+      </div>
       <!-- HOME PAGE -->
       <main class="page active" id="home">
          <h1>DormGuard</h1>
          <div class="page-content">
-            <div class="card">
-               <div class="label">Door Status</div>
-               <div class="value-row">
-                  <div id="doorStatus" class="value">-</div>
-                  <span class="material-symbols-outlined card-icon">door_front</span>
+            <div class="cards-grid">
+               <div class="card" id="card-last-opened">
+                  <div class="label">Last Opened At</div>
+                  <div id="LastOpened" class="value">
+                     <span id="lastOpenedHour">--</span>
+                     <span id="lastOpenedMin">--</span>
+                  </div>
+                  <span id="lastOpenedDate"></span>
                </div>
-            </div>
-            <div class="card">
-               <div class="label">Last Opened At</div>
-               <div class="value-row">
-                  <div id="LastOpened" class="value">-</div>
-                  <span class="material-symbols-outlined card-icon">history</span>
-               </div>
-            </div>
-            <div class="card">
-               <div class="label">Time</div>
-               <div class="value-row">
-                  <div id="currentTime" class="value">--:--:--</div>
-                  <span class="material-symbols-outlined card-icon">schedule</span>
+               <div class="cards-right">
+                  <div class="card">
+                     <div class="label">Door Status</div>
+                     <div class="value-row">
+                        <div id="doorStatus" class="value">-</div>
+                        <span class="material-symbols-rounded card-icon">door_front</span>
+                     </div>
+                  </div>
+                  <div class="card">
+                     <div class="label">Time</div>
+                     <div class="value-row">
+                        <div id="currentTime" class="value">--:--:--</div>
+                        <span class="material-symbols-rounded card-icon">schedule</span>
+                     </div>
+                  </div>
                </div>
             </div>
             <div class="controls">
                <button class="md-btn setup-btn" id="openSetupBtn">
-                  <span class="material-symbols-outlined">dashboard_customize</span>
-                  Setup DormGuard
+               <span class="material-symbols-rounded">dashboard_customize</span>
+               Setup DormGuard
                </button>
                <div class="settings-section">
-                  <div class="label">
-                     <span class="material-symbols-outlined">alarm</span>
-                     Alert Control
+                  <div class="settings-left">
+                     <div class="label">
+                        <span class="material-symbols-rounded">alarm</span>
+                        Alert Control
+                     </div>
+                     <button id="alertToggle" class="md-btn">No Alert</button>
                   </div>
-                  <button id="alertToggle" class="md-btn">No Alert</button>
+                  <div class="pixel-screen" id="screen"></div>
                </div>
             </div>
          </div>
@@ -76,7 +111,7 @@
          <h1>
             Logs
             <button id="viewdat" class="sheets-btn" title="View on Sheets">
-               <span class="material-symbols-outlined">note</span>
+            <span class="material-symbols-rounded">note</span>
             </button>
          </h1>
          <div class="page-content">
@@ -85,7 +120,7 @@
             </div>
             <div class="database">
                <div class="label">
-                  <span class="material-symbols-outlined">download</span>
+                  <span class="material-symbols-rounded">download</span>
                   Download Database
                </div>
                <div class="db-actions">
@@ -102,92 +137,92 @@
             <div class="settings-list">
                <div class="settings-header">DormGuard Device</div>
                <div class="settings-item">
-                  <span class="material-symbols-outlined">lightbulb</span>
+                  <span class="material-symbols-rounded">lightbulb</span>
                   <span class="setting-text">LED Blink</span>
                   <label class="md-switch">
-                     <input type="checkbox" id="ledSwitch">
-                     <span></span>
+                  <input type="checkbox" id="ledSwitch">
+                  <span></span>
                   </label>
                </div>
                <div class="settings-item">
-                  <span class="material-symbols-outlined">volume_up</span>
+                  <span class="material-symbols-rounded">volume_up</span>
                   <span class="setting-text">Buzzer</span>
                   <label class="md-switch">
-                     <input type="checkbox" id="buzzerSwitch">
-                     <span></span>
+                  <input type="checkbox" id="buzzerSwitch">
+                  <span></span>
                   </label>
                </div>
                <div class="settings-item">
-                  <span class="material-symbols-outlined">wb_incandescent</span>
+                  <span class="material-symbols-rounded">wb_incandescent</span>
                   <span class="setting-text">Lamp</span>
                   <label class="md-switch">
-                     <input type="checkbox" id="lampSwitch">
-                     <span></span>
+                  <input type="checkbox" id="lampSwitch">
+                  <span></span>
                   </label>
                </div>
                <div class="settings-header">App</div>
                <div class="settings-item">
-                  <span class="material-symbols-outlined">dark_mode</span>
+                  <span class="material-symbols-rounded">dark_mode</span>
                   <span class="setting-text">Dark Mode</span>
                   <label class="md-switch">
-                     <input type="checkbox" id="darkModeSwitch">
-                     <span></span>
+                  <input type="checkbox" id="darkModeSwitch">
+                  <span></span>
                   </label>
                </div>
                <div class="settings-item">
-                  <span class="material-symbols-outlined">notifications</span>
+                  <span class="material-symbols-rounded">notifications</span>
                   <span class="setting-text">Notification</span>
                   <label class="md-switch">
-                     <input type="checkbox" id="notificationsSwitch">
-                     <span></span>
+                  <input type="checkbox" id="notificationsSwitch">
+                  <span></span>
                   </label>
                </div>
                <div class="settings-item">
-                  <span class="material-symbols-outlined">warning</span>
+                  <span class="material-symbols-rounded">warning</span>
                   <span class="setting-text">Alert</span>
                   <label class="md-switch">
-                     <input type="checkbox" id="alertSwitch">
-                     <span></span>
+                  <input type="checkbox" id="alertSwitch">
+                  <span></span>
                   </label>
                </div>
                <div class="settings-header">Accessibility</div>
                <div class="settings-item">
-                  <span class="material-symbols-outlined">motion_photos_off</span>
+                  <span class="material-symbols-rounded">motion_photos_off</span>
                   <span class="setting-text">Disable Animation</span>
                   <label class="md-switch">
-                     <input type="checkbox" id="reduceMotionSwitch">
-                     <span></span>
+                  <input type="checkbox" id="reduceMotionSwitch">
+                  <span></span>
                   </label>
                </div>
                <div class="settings-item">
-                  <span class="material-symbols-outlined">contrast</span>
+                  <span class="material-symbols-rounded">contrast</span>
                   <span class="setting-text">High Contrast</span>
                   <label class="md-switch">
-                     <input type="checkbox" id="contrastSwitch">
-                     <span></span>
+                  <input type="checkbox" id="contrastSwitch">
+                  <span></span>
                   </label>
                </div>
                <div class="settings-item">
-                  <span class="material-symbols-outlined">vibration</span>
+                  <span class="material-symbols-rounded">vibration</span>
                   <span class="setting-text">Disable Haptic</span>
                   <label class="md-switch">
-                     <input type="checkbox" id="vibrationSwitch">
-                     <span></span>
+                  <input type="checkbox" id="vibrationSwitch">
+                  <span></span>
                   </label>
                </div>
                <div class="settings-header" id="configSection">DormGuard Config</div>
                <div class="settings-item collapsible" data-target="apiConfig">
-                  <span class="material-symbols-outlined">terminal</span>
+                  <span class="material-symbols-rounded">terminal</span>
                   <span class="setting-text">Google Sheet API</span>
                   <div class="expand-icon">
-                     <span class="material-symbols-outlined">expand_more</span>
+                     <span class="material-symbols-rounded">expand_more</span>
                   </div>
                </div>
                <div class="collapsible-content" id="apiConfig" data-target="userConfig">
                   <div class="user-config">
                      <div class="user-input">
                         <div class="sheets-input-container">
-                           <span class="material-symbols-outlined sheets-icon">assignment</span>
+                           <span class="material-symbols-rounded sheets-icon">assignment</span>
                         </div>
                      </div>
                      <div class="stp-wrap">
@@ -196,7 +231,7 @@
                               <div class="stp-alone">
                                  <div class="stp-card">
                                     <div class="stp-cnt">
-                                       <span class="material-symbols-outlined">door_front</span>
+                                       <span class="material-symbols-rounded">door_front</span>
                                        <div class="stp-info">
                                           <span class="stp-lbl">Door Logs API</span>
                                           <span class="stp-sts">API for door open/close logs</span>
@@ -208,7 +243,7 @@
                               <div class="stp-grid">
                                  <div class="stp-card">
                                     <div class="stp-cnt">
-                                       <span class="material-symbols-outlined">note</span>
+                                       <span class="material-symbols-rounded">note</span>
                                        <div class="stp-info">
                                           <span class="stp-lbl">Sheets</span>
                                           <span class="stp-sts">Your Sheets link</span>
@@ -217,7 +252,7 @@
                                  </div>
                                  <div class="stp-card">
                                     <div class="stp-cnt">
-                                       <span class="material-symbols-outlined">nearby</span>
+                                       <span class="material-symbols-rounded">nearby</span>
                                        <div class="stp-info">
                                           <span class="stp-lbl">Ctrls API</span>
                                           <span class="stp-sts">Device controls</span>
@@ -230,7 +265,7 @@
                               <div class="stp-alone">
                                  <div class="stp-card">
                                     <div class="stp-cnt">
-                                       <span class="material-symbols-outlined">door_front</span>
+                                       <span class="material-symbols-rounded">door_front</span>
                                        <div class="stp-info">
                                           <span class="stp-lbl">Door Logs API</span>
                                           <span class="stp-sts">API for door open/close logs</span>
@@ -244,7 +279,7 @@
                                  <div class="stp-next">
                                     <div class="stp-card">
                                        <div class="stp-cnt">
-                                          <span class="material-symbols-outlined">arrow_forward</span>
+                                          <span class="material-symbols-rounded">arrow_forward</span>
                                        </div>
                                     </div>
                                  </div>
@@ -254,7 +289,7 @@
                               <div class="stp-alone">
                                  <div class="stp-card">
                                     <div class="stp-cnt">
-                                       <span class="material-symbols-outlined">note</span>
+                                       <span class="material-symbols-rounded">note</span>
                                        <div class="stp-info">
                                           <span class="stp-lbl">Sheets</span>
                                           <span class="stp-sts">Your Sheets link</span>
@@ -268,7 +303,7 @@
                                  <div class="stp-next">
                                     <div class="stp-card">
                                        <div class="stp-cnt">
-                                          <span class="material-symbols-outlined">arrow_forward</span>
+                                          <span class="material-symbols-rounded">arrow_forward</span>
                                        </div>
                                     </div>
                                  </div>
@@ -278,7 +313,7 @@
                               <div class="stp-alone">
                                  <div class="stp-card">
                                     <div class="stp-cnt">
-                                       <span class="material-symbols-outlined">nearby</span>
+                                       <span class="material-symbols-rounded">nearby</span>
                                        <div class="stp-info">
                                           <span class="stp-lbl">Controls API</span>
                                           <span class="stp-sts">Device Controls</span>
@@ -292,7 +327,7 @@
                                  <div class="stp-next">
                                     <div class="stp-card">
                                        <div class="stp-cnt">
-                                          <span class="material-symbols-outlined">restart_alt</span>
+                                          <span class="material-symbols-rounded">restart_alt</span>
                                        </div>
                                     </div>
                                  </div>
@@ -313,10 +348,10 @@
                   </div>
                </div>
                <div class="settings-item collapsible" data-target="apiTutorial">
-                  <span class="material-symbols-outlined">info</span>
+                  <span class="material-symbols-rounded">info</span>
                   <span class="setting-text">How to get web app API?</span>
                   <div class="expand-icon">
-                     <span class="material-symbols-outlined">expand_more</span>
+                     <span class="material-symbols-rounded">expand_more</span>
                   </div>
                </div>
                <div class="collapsible-content" id="apiTutorial">
@@ -327,8 +362,8 @@
                               <h3><span class="step-number">Step 1</span> Prepare the Script</h3>
                               <p>In the menu, go to <strong>Extensions → Apps Script</strong>. Delete any existing code, then paste this:</p>
                               <button class="tut-code-toggle md-btn" id="toggleApiCode">
-                                 <span class="material-symbols-outlined">code</span>
-                                 Show Code
+                              <span class="material-symbols-rounded">code</span>
+                              Show Code
                               </button>
                               <div class="code-container" id="apiCodeContainer" style="display:none;">
                                  <div class="tools">
@@ -337,7 +372,7 @@
                                     <div class="circle"><span class="green box"></span></div>
                                  </div>
                                  <button id="copyApiCode" class="copy-btn" title="Copy Code">
-                                    <span class="material-symbols-outlined">content_copy</span>
+                                 <span class="material-symbols-rounded">content_copy</span>
                                  </button>
                                  <div class="card__content">
                                     <pre>
@@ -409,134 +444,135 @@ function doPost(e) {
                         </div>
                         <div class="tut-btns">
                            <button class="tut-btn tut-restart md-btn" id="tutRestart">
-                              <span class="material-symbols-outlined">restart_alt</span>
+                           <span class="material-symbols-rounded">restart_alt</span>
                            </button>
                            <button class="tut-btn tut-prev md-btn" id="tutPrev">
-                              <span class="material-symbols-outlined">arrow_back</span>
+                           <span class="material-symbols-rounded">arrow_back</span>
                            </button>
                            <button class="tut-btn tut-next md-btn" id="tutNext">
-                              <span class="material-symbols-outlined">arrow_forward</span>
+                           <span class="material-symbols-rounded">arrow_forward</span>
                            </button>
                         </div>
                      </div>
                   </div>
                   <script>
-  const copyBtn = document.getElementById('copyApiCode');
-  const codeContainer = document.getElementById('apiCodeContainer');
-  const toggleCodeBtn = document.getElementById('toggleApiCode');
-  let codeVisible = false;
-
-  toggleCodeBtn.addEventListener('click', () => {
-    if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
-    codeVisible = !codeVisible;
-    if (codeVisible) {
-      const overlay = document.createElement('div');
-      overlay.className = 'md-dialog-overlay';
-      overlay.innerHTML = `
-        <div class="md-dialog" style="width:min(500px,92vw);max-height:80vh;overflow-y:auto;padding:16px;">
-          <div style="width:100%;margin-bottom:12px;">
-            <span style="font-weight:600;font-size:var(--fs-l);">Apps Script Code</span>
-          </div>
-          <div class="code-container" style="margin:0;">
-            <div class="tools">
-              <div class="circle"><span class="red box"></span></div>
-              <div class="circle"><span class="yellow box"></span></div>
-              <div class="circle"><span class="green box"></span></div>
-            </div>
-            <button id="copyApiCodeDialog" class="copy-btn" title="Copy Code">
-              <span class="material-symbols-outlined">content_copy</span>
-            </button>
-            <div class="card__content">
-              <pre>${codeContainer.querySelector('pre').innerText}</pre>
-            </div>
-          </div>
-          <div style="display:flex;justify-content:center;margin-top:16px;">
-            <button id="closeCodeDialog" class="md-btn" style="padding:12px 32px;border-radius:50px !important;display:flex;align-items:center;justify-content:center;gap:8px;font-size:var(--fs-md);font-weight:600;">
-              <span class="material-symbols-outlined" style="font-size:1.1rem;font-variation-settings:'wght' 700;">close</span>
-              Close
-            </button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(overlay);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => overlay.classList.add('show'));
-      });
-
-      const closeDialog = () => {
-        overlay.classList.remove('show');
-        overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
-        codeVisible = false;
-        toggleCodeBtn.innerHTML = '<span class="material-symbols-outlined">code</span> Show Code';
-        if (navigator.vibrate) navigator.vibrate(30);
-      };
-
-      overlay.querySelector('#closeCodeDialog').addEventListener('click', closeDialog);
-      overlay.addEventListener('click', (e) => { if (e.target === overlay) closeDialog(); });
-
-      overlay.querySelector('#copyApiCodeDialog').addEventListener('click', () => {
-        if (navigator.vibrate) navigator.vibrate(64);
-        const code = codeContainer.querySelector('pre').innerText;
-        navigator.clipboard.writeText(code).then(() => {
-          overlay.querySelector('#copyApiCodeDialog').innerHTML = '<span class="material-symbols-outlined">check</span>';
-          setTimeout(() => {
-            overlay.querySelector('#copyApiCodeDialog').innerHTML = '<span class="material-symbols-outlined">content_copy</span>';
-          }, 1500);
-        }).catch(err => console.error('Copy failed', err));
-      });
-
-      toggleCodeBtn.innerHTML = '<span class="material-symbols-outlined">code_off</span> Hide Code';
-    } else {
-      toggleCodeBtn.innerHTML = '<span class="material-symbols-outlined">code</span> Show Code';
-      codeVisible = false;
-    }
-  });
-
-  copyBtn.addEventListener('click', () => {
-    if (navigator.vibrate) navigator.vibrate(64);
-    const code = codeContainer.querySelector('pre').innerText;
-    navigator.clipboard.writeText(code).then(() => {
-      copyBtn.innerHTML = '<span class="material-symbols-outlined">check</span>';
-      setTimeout(() => {
-        copyBtn.innerHTML = '<span class="material-symbols-outlined">content_copy</span>';
-      }, 1500);
-    }).catch(err => console.error('Copy failed', err));
-  });
-
-  const tutPages = document.querySelector('.tut-pages');
-  const tutDots = document.querySelectorAll('.tut-dot');
-  const tutPrev = document.getElementById('tutPrev');
-  const tutNext = document.getElementById('tutNext');
-  const tutRestart = document.getElementById('tutRestart');
-  let tutIndex = 0;
-  const tutTotal = tutDots.length;
-
-  function tutGoTo(index) {
-    tutIndex = Math.max(0, Math.min(index, tutTotal - 1));
-    tutPages.scrollTo({ left: tutPages.clientWidth * tutIndex, behavior: 'smooth' });
-    tutDots.forEach((d, i) => d.classList.toggle('active', i === tutIndex));
-    tutPrev.style.opacity = tutIndex === 0 ? '0.3' : '1';
-    tutNext.style.opacity = tutIndex === tutTotal - 1 ? '0.3' : '1';
-    tutRestart.style.opacity = tutIndex === 0 ? '0.3' : '1';
-    if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
-  }
-
-  tutPrev.addEventListener('click', () => { if (tutIndex > 0) tutGoTo(tutIndex - 1); });
-  tutNext.addEventListener('click', () => { if (tutIndex < tutTotal - 1) tutGoTo(tutIndex + 1); });
-  tutRestart.addEventListener('click', () => { tutGoTo(0); });
-
-  tutPages.addEventListener('scroll', () => {
-    const index = Math.round(tutPages.scrollLeft / tutPages.clientWidth);
-    if (index !== tutIndex) {
-      tutIndex = index;
-      tutDots.forEach((d, i) => d.classList.toggle('active', i === tutIndex));
-      tutPrev.style.opacity = tutIndex === 0 ? '0.3' : '1';
-      tutNext.style.opacity = tutIndex === tutTotal - 1 ? '0.3' : '1';
-      tutRestart.style.opacity = tutIndex === 0 ? '0.3' : '1';
-    }
-  });
-
-  tutGoTo(0);
+                     const copyBtn = document.getElementById('copyApiCode');
+                     const codeContainer = document.getElementById('apiCodeContainer');
+                     const toggleCodeBtn = document.getElementById('toggleApiCode');
+                     let codeVisible = false;
+                     
+                     toggleCodeBtn.addEventListener('click', () => {
+                       if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+                       codeVisible = !codeVisible;
+                       if (codeVisible) {
+                         const overlay = document.createElement('div');
+                         overlay.className = 'md-dialog-overlay';
+                         overlay.innerHTML = `
+                           <div class="md-dialog" style="width:min(500px,92vw);max-height:80vh;overflow-y:auto;padding:16px;">
+                             <div style="width:100%;margin-bottom:12px;">
+                               <span style="font-weight:600;font-size:var(--fs-l);">Apps Script Code</span>
+                             </div>
+                             <div class="code-container" style="margin:0;">
+                               <div class="tools">
+                                 <div class="circle"><span class="red box"></span></div>
+                                 <div class="circle"><span class="yellow box"></span></div>
+                                 <div class="circle"><span class="green box"></span></div>
+                               </div>
+                               <button id="copyApiCodeDialog" class="copy-btn" title="Copy Code">
+                                 <span class="material-symbols-rounded">content_copy</span>
+                               </button>
+                               <div class="card__content">
+                                 <pre>${codeContainer.querySelector('pre').innerText}</pre>
+                               </div>
+                             </div>
+                             <div style="display:flex;justify-content:center;margin-top:16px;">
+                               <button id="closeCodeDialog" class="md-btn" style="padding:12px 32px;border-radius:50px !important;display:flex;align-items:center;justify-content:center;gap:8px;font-size:var(--fs-md);font-weight:600;">
+                                 <span class="material-symbols-rounded" style="font-size:1.1rem;font-variation-settings:'wght' 700;">close</span>
+                                 Close
+                               </button>
+                             </div>
+                           </div>
+                         `;
+                         document.body.appendChild(overlay);
+                         requestAnimationFrame(() => {
+                           requestAnimationFrame(() => overlay.classList.add('show'));
+                         });
+                     
+                         const closeDialog = () => {
+                           overlay.classList.remove('show');
+                           overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+                           codeVisible = false;
+                           toggleCodeBtn.innerHTML = '<span class="material-symbols-rounded">code</span> Show Code';
+                           if (navigator.vibrate) navigator.vibrate(30);
+                         };
+                     
+                         overlay.querySelector('#closeCodeDialog').addEventListener('click', closeDialog);
+                         overlay.addEventListener('click', (e) => { if (e.target === overlay) closeDialog(); });
+                     
+                         overlay.querySelector('#copyApiCodeDialog').addEventListener('click', () => {
+                           if (navigator.vibrate) navigator.vibrate(64);
+                           const code = codeContainer.querySelector('pre').innerText;
+                           navigator.clipboard.writeText(code).then(() => {
+                             overlay.querySelector('#copyApiCodeDialog').innerHTML = '<span class="material-symbols-rounded">check</span>';
+                             setTimeout(() => {
+                               overlay.querySelector('#copyApiCodeDialog').innerHTML = '<span class="material-symbols-rounded">content_copy</span>';
+                             }, 1500);
+                           }).catch(err => console.error('Copy failed', err));
+                         });
+                     
+                         toggleCodeBtn.innerHTML = '<span class="material-symbols-rounded">code_off</span> Hide Code';
+                       } else {
+                         toggleCodeBtn.innerHTML = '<span class="material-symbols-rounded">code</span> Show Code';
+                         codeVisible = false;
+                       }
+                     });
+                     
+                     copyBtn.addEventListener('click', () => {
+                       if (navigator.vibrate) navigator.vibrate(64);
+                       const code = codeContainer.querySelector('pre').innerText;
+                       navigator.clipboard.writeText(code).then(() => {
+                         copyBtn.innerHTML = '<span class="material-symbols-rounded">check</span>';
+                         setTimeout(() => {
+                           copyBtn.innerHTML = '<span class="material-symbols-rounded">content_copy</span>';
+                         }, 1500);
+                       }).catch(err => console.error('Copy failed', err));
+                     });
+                     
+                     const tutPages = document.querySelector('.tut-pages');
+                     const tutDots = document.querySelectorAll('.tut-dot');
+                     const tutPrev = document.getElementById('tutPrev');
+                     const tutNext = document.getElementById('tutNext');
+                     const tutRestart = document.getElementById('tutRestart');
+                     let tutIndex = 0;
+                     const tutTotal = tutDots.length;
+                     
+                     function tutGoTo(index) {
+                       tutIndex = Math.max(0, Math.min(index, tutTotal - 1));
+                       tutPages.scrollTo({ left: tutPages.clientWidth * tutIndex, behavior: 'smooth' });
+                       tutDots.forEach((d, i) => d.classList.toggle('active', i === tutIndex));
+                       tutPrev.style.opacity = tutIndex === 0 ? '0.3' : '1';
+                       tutNext.style.opacity = tutIndex === tutTotal - 1 ? '0.3' : '1';
+                       tutRestart.style.opacity = tutIndex === 0 ? '0.3' : '1';
+                       if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+                     }
+                     
+                     tutPrev.addEventListener('click', () => { if (tutIndex > 0) tutGoTo(tutIndex - 1); });
+                     tutNext.addEventListener('click', () => { if (tutIndex < tutTotal - 1) tutGoTo(tutIndex + 1); });
+                     tutRestart.addEventListener('click', () => { tutGoTo(0); });
+                     
+                     tutPages.addEventListener('scroll', () => {
+                       const index = Math.round(tutPages.scrollLeft / tutPages.clientWidth);
+                       if (index !== tutIndex) {
+                         tutIndex = index;
+                         tutDots.forEach((d, i) => d.classList.toggle('active', i === tutIndex));
+                         tutPrev.style.opacity = tutIndex === 0 ? '0.3' : '1';
+                         tutNext.style.opacity = tutIndex === tutTotal - 1 ? '0.3' : '1';
+                         tutRestart.style.opacity = tutIndex === 0 ? '0.3' : '1';
+                       }
+                     });
+                     
+                     tutGoTo(0);
+                                     
                   </script>
                </div>
             </div>
@@ -547,9 +583,9 @@ function doPost(e) {
          <h1>
             About
             <button class="dev-btn">
-               <a href="https://github.com/zenlixir" target="_blank" class="icon-link">
-                  <span class="material-symbols-outlined">code</span>
-               </a>
+            <a href="https://github.com/rynekryz" target="_blank" class="icon-link">
+            <span class="material-symbols-rounded">code</span>
+            </a>
             </button>
          </h1>
          <div class="page-content">
@@ -557,83 +593,127 @@ function doPost(e) {
                <img src="icon.png" alt="Icon" />
                <div class="info-text">
                   <div>Dorm Guard</div>
-                  <div class="creator">by Zenlixir</div>
+                  <div class="ver">1.2-Nightly</div>
                </div>
             </div>
-            <div class="another-info">
-               <h2>Credits</h2>
-               <ul class="credits-list">
-                  <li>
-                     <span class="material-symbols-outlined">code</span>
-                     <div class="credits-text">
-                        Google Sheets API
-                        <div class="credits-desc">by Google</div>
-                     </div>
-                  </li>
-                  <li>
-                     <span class="material-symbols-outlined">palette</span>
-                     <div class="credits-text">
-                        Material Design Icons
-                        <div class="credits-desc">by Google</div>
-                     </div>
-                  </li>
-                  <li>
-                     <span class="material-symbols-outlined">font_download</span>
-                     <div class="credits-text">
-                        Google Fonts (Google Sans Flex)
-                        <div class="credits-desc">by Google</div>
-                     </div>
-                  </li>
-                  <li>
-                     <span class="material-symbols-outlined">sports_esports</span>
-                     <div class="credits-text">
-                        Monocraft font (based on Mojangles)
-                        <div class="credits-desc">by IdreesInc | Original inspiration: Mojang Studios</div>
-                     </div>
-                  </li>
-                  <li>
-                     <span class="material-symbols-outlined">cloud</span>
-                     <div class="credits-text">
-                        Material You
-                        <div class="credits-desc">by Google</div>
-                     </div>
-                  </li>
-                  <li>
-                     <span class="material-symbols-outlined">ac_unit</span>
-                     <div class="credits-text">
-                        About screen inspired from Hail app <br>(and mbloader)
-                        <div class="credits-desc">by aistra0528</div>
-                     </div>
-                  </li>
-                  <li>
-                     <span class="material-symbols-outlined">terminal</span>
-                     <div class="credits-text">
-                        Node.js
-                        <div class="credits-desc">by OpenJS Foundation</div>
-                     </div>
-                  </li>
-               </ul>
+            <div class="wavy-divider">_______________________________</div>
+            <div class="about-card">
+               <div class="about-profile">
+                  <img src="https://github.com/rynekryz.png" class="about-avatar" alt="Avatar" />
+                  <div class="about-info">
+                     <h2>Ryne | rynekryz</h2>
+                     <p>Lead developer (Solo dev lol)</p>
+                  </div>
+               </div>
+               <div class="about-links">
+                  <a href="https://github.com/rynekryz" class="about-link-btn">
+                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.37.6.1.82-.26.82-.58v-2.03c-3.34.72-4.04-1.6-4.04-1.6-.55-1.4-1.34-1.77-1.34-1.77-1.08-.74.08-.72.08-.72 1.2.08 1.83 1.23 1.83 1.23 1.07 1.83 2.8 1.3 3.48 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.04.13 3 .4 2.28-1.55 3.28-1.23 3.28-1.23.64 1.66.24 2.88.12 3.18.77.84 1.23 1.9 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58C20.57 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/>
+                     </svg>
+                  </a>
+                  <a href="https://discord.gg/YKhWXXhKmC" class="about-link-btn">
+                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.033.055a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                     </svg>
+                  </a>
+                  <a href="https://tiktok.com/@rynekryz" class="about-link-btn">
+                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.16 8.16 0 0 0 4.77 1.52V6.75a4.85 4.85 0 0 1-1-.06z"/>
+                     </svg>
+                  </a>
+               </div>
+               <a href="#" class="about-coffee-btn">
+               <span class="material-symbols-rounded">
+               local_cafe
+               </span>Buy me a coffee!
+               </a>
             </div>
-            <div class="app-version">v1.0.1-beta.2</div>
+            <div class="wavy-divider">_______________________________</div>
+            <div class="another-info">
+               <div id="creditsBox">
+                  <div id="creditsTitle">Credits <span class="material-symbols-rounded">
+                     book_2
+                     </span>
+                  </div>
+                  <div id="creditsList">
+                     <div class="credits-item" onclick="window.open('https://developers.google.com/sheets/api', '_blank')">
+                        <span class="material-symbols-rounded">code</span>
+                        <div class="credits-info">
+                           <span class="credits-name">Google Sheets API</span>
+                           <span class="credits-sub">by Google</span>
+                        </div>
+                        <span class="material-symbols-rounded credits-link">open_in_new</span>
+                     </div>
+                     <div class="credits-divider"></div>
+                     <div class="credits-item" onclick="window.open('https://fonts.google.com/icons', '_blank')">
+                        <span class="material-symbols-rounded">palette</span>
+                        <div class="credits-info">
+                           <span class="credits-name">Material Design Icons</span>
+                           <span class="credits-sub">by Google</span>
+                        </div>
+                        <span class="material-symbols-rounded credits-link">open_in_new</span>
+                     </div>
+                     <div class="credits-divider"></div>
+                     <div class="credits-item" onclick="window.open('https://fonts.google.com', '_blank')">
+                        <span class="material-symbols-rounded">font_download</span>
+                        <div class="credits-info">
+                           <span class="credits-name">Google Sans Flex & Fredoka</span>
+                           <span class="credits-sub">by Google Fonts</span>
+                        </div>
+                        <span class="material-symbols-rounded credits-link">open_in_new</span>
+                     </div>
+                     <div class="credits-divider"></div>
+                     <div class="credits-item" onclick="window.open('https://m3.material.io/blog/building-with-m3-expressive', '_blank')">
+                        <span class="material-symbols-rounded">cloud</span>
+                        <div class="credits-info">
+                           <span class="credits-name">Material You Expressive</span>
+                           <span class="credits-sub">by Google</span>
+                        </div>
+                        <span class="material-symbols-rounded credits-link">open_in_new</span>
+                     </div>
+                     <div class="credits-divider"></div>
+                     <div class="credits-item" onclick="window.open('https://github.com/aistra0528/Hail', '_blank')">
+                        <span class="material-symbols-rounded">ac_unit</span>
+                        <div class="credits-info">
+                           <span class="credits-name">About screen inspiration: Metrolist, Hail
+                           </span>
+                           <span class="credits-sub">by Mo Agamy, aistra0528</span>
+                        </div>
+                        <span class="material-symbols-rounded credits-link">open_in_new</span>
+                     </div>
+                     <div class="credits-divider"></div>
+                     <div class="credits-item" onclick="window.open('https://nodejs.org', '_blank')">
+                        <span class="material-symbols-rounded">terminal</span>
+                        <div class="credits-info">
+                           <span class="credits-name">Node.js</span>
+                           <span class="credits-sub">by OpenJS Foundation</span>
+                        </div>
+                        <span class="material-symbols-rounded credits-link">open_in_new</span>
+                     </div>
+                  </div>
+                  <div id="creditsDivider"></div>
+               </div>
+            </div>
+            <div class="app-version">110626</div>
          </div>
       </main>
       <!-- BOTTOM NAV -->
       <nav class="bottom-nav">
          <button class="nav-item active" data-page="home">
-            <span class="material-symbols-outlined">home</span>
-            <span class="nav-label">Home</span>
+         <span class="material-symbols-rounded">home</span>
+         <span class="nav-label">Home</span>
          </button>
          <button class="nav-item" data-page="logs">
-            <span class="material-symbols-outlined">list</span>
-            <span class="nav-label">Logs</span>
+         <span class="material-symbols-rounded">list</span>
+         <span class="nav-label">Logs</span>
          </button>
          <button class="nav-item" data-page="settings">
-            <span class="material-symbols-outlined">settings</span>
-            <span class="nav-label">Settings</span>
+         <span class="material-symbols-rounded">settings</span>
+         <span class="nav-label">Settings</span>
          </button>
          <button class="nav-item" data-page="about">
-            <span class="material-symbols-outlined">info</span>
-            <span class="nav-label">About</span>
+         <span class="material-symbols-rounded">info</span>
+         <span class="nav-label">About</span>
          </button>
       </nav>
       <script>
