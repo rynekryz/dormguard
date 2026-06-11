@@ -57,8 +57,10 @@ if (EL.alertSwitch) {
   });
 }
 
-const formatAMPM = date => {
-  if (!(date instanceof Date) || isNaN(date)) return '-';
+const formatAMPM = dateStr => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  if (isNaN(date)) return '-';
   let h = date.getHours();
   const m = date.getMinutes().toString().padStart(2, '0');
   const ampm = h >= 12 ? 'PM' : 'AM';
@@ -66,32 +68,40 @@ const formatAMPM = date => {
   return `${h}:${m} ${ampm}`;
 };
 
-const formatDate = date => {
-  if (!(date instanceof Date) || isNaN(date)) return '-';
+const formatDate = dateStr => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  if (isNaN(date)) return '-';
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
 let lastDoorState = null;
 let fetchTimer = null;
+let lastRawDataString = "";
 
 async function fetchSheetData() {
   try {
     const res = await fetch(window.API_KEY);
     const raw = await res.json();
     const rows = raw.values || raw || [];
+    
+    const currentStr = JSON.stringify(rows);
+    if (currentStr === lastRawDataString) {
+      return { unchanged: true };
+    }
+    lastRawDataString = currentStr;
+
     const history = rows.slice(0).reverse().map(row => {
       const rawTime = row.time || row[0];
       const rawDate = row.date || row[1];
-      const door    = row.door || row[2] || 'UNKNOWN';
-      const td = rawTime ? new Date(rawTime) : null;
-      const dd = rawDate ? new Date(rawDate) : null;
       return {
-        time: td && !isNaN(td) ? formatAMPM(td) : '-',
-        date: dd && !isNaN(dd) ? formatDate(dd) : '-',
-        door,
+        time: formatAMPM(rawTime),
+        date: formatDate(rawDate),
+        door: row.door || row[2] || 'UNKNOWN',
       };
     });
     return {
+      unchanged:  false,
       current:    history[0] || { door: 'UNKNOWN' },
       history,
       lastOpened: history.find(e => e.door === 'OPEN') || null,
@@ -103,20 +113,21 @@ async function fetchSheetData() {
 
 async function fetchServerData() {
   const data = await fetchSheetData();
-  if (!data) return;
+  if (!data || data.unchanged) return;
 
   if (EL.doorStatus.textContent !== data.current.door)
     EL.doorStatus.textContent = data.current.door;
 
-  const frag = document.createDocumentFragment();
+  let htmlBuilder = "";
   data.history.forEach(item => {
-    const li   = document.createElement('li');
     const isOpen = item.door.toLowerCase() === 'open';
-    li.className = isOpen ? 'open' : 'closed';
-    li.innerHTML = `<span class="log-icon"><span class="material-symbols-rounded">${isOpen ? 'lock_open' : 'lock'}</span></span><span class="log-datetime">${item.time} | ${item.date}</span><span class="log-door">${item.door}</span>`;
-    frag.appendChild(li);
+    htmlBuilder += `<li class="${isOpen ? 'open' : 'closed'}">
+      <span class="log-icon"><span class="material-symbols-rounded">${isOpen ? 'lock_open' : 'lock'}</span></span>
+      <span class="log-datetime">${item.time} | ${item.date}</span>
+      <span class="log-door">${item.door}</span>
+    </li>`;
   });
-  EL.eventList.replaceChildren(frag);
+  EL.eventList.innerHTML = htmlBuilder;
 
   const hourEl = $('lastOpenedHour');
   const minEl  = $('lastOpenedMin');
@@ -126,9 +137,11 @@ async function fetchServerData() {
     const [hour, min]    = time.split(':');
     const newHour = hour.padStart(2, '0');
     const changed = hourEl.textContent !== newHour || minEl.textContent !== min;
+    
     hourEl.textContent = newHour;
     minEl.textContent  = min;
     $('lastOpenedDate').textContent = data.lastOpened.date;
+    
     if (changed) {
       const lo = $('LastOpened');
       lo.classList.remove('pop');
@@ -174,9 +187,16 @@ async function downloadCSV(filename, limit = null) {
   btn.appendChild(spinner);
 
   try {
-    const data = await fetchSheetData();
-    if (!data) return;
-    const rows = limit ? data.history.slice(0, limit) : data.history;
+    const res = await fetch(window.API_KEY);
+    const raw = await res.json();
+    let rows = raw.values || raw || [];
+    rows = rows.slice(0).reverse().map(row => ({
+      time: formatAMPM(row.time || row[0]),
+      date: formatDate(row.date || row[1]),
+      door: row.door || row[2] || 'UNKNOWN'
+    }));
+
+    if (limit) rows = rows.slice(0, limit);
     const csv  = ['Time,Date,Door'].concat(rows.map(e => `${e.time},${e.date},${e.door}`)).join('\n');
 
     if (IS_CAPACITOR && Filesystem) {
@@ -190,6 +210,8 @@ async function downloadCSV(filename, limit = null) {
       a.click();
       URL.revokeObjectURL(a.href);
     }
+  } catch(e) {
+     console.error(e);
   } finally {
     spinner.remove();
     btn.textContent = origText;
@@ -230,6 +252,14 @@ const getCurrentTheme = () => document.body.classList.contains('dark') ? 'dark' 
 function applyTheme(theme) {
   document.body.classList.remove('light', 'dark');
   document.body.classList.add(theme);
+}
+
+let cachedClockFontMetric = null;
+function getClockFontMetric() {
+  if(!cachedClockFontMetric && EL.currentTime) {
+     cachedClockFontMetric = parseFloat(window.getComputedStyle(EL.currentTime).fontSize) * 4.6;
+  }
+  return cachedClockFontMetric || 72;
 }
 
 function applyContrast() {
@@ -351,13 +381,12 @@ $('openSetupBtn').addEventListener('click', () => {
 });
 
 let hideSeconds = false;
-const clockContainer = EL.currentTime.parentElement; 
+const clockContainer = EL.currentTime?.parentElement; 
 
 if (clockContainer) {
   const observer = new ResizeObserver(entries => {
     for (let entry of entries) {
-      const fontSize = parseFloat(window.getComputedStyle(EL.currentTime).fontSize);
-      hideSeconds = entry.contentRect.width < (fontSize * 4.6); 
+      hideSeconds = entry.contentRect.width < getClockFontMetric(); 
     }
   });
   observer.observe(clockContainer);
@@ -552,8 +581,10 @@ const stopEmotes = () => clearInterval(emoteTimer);
 drawEmote(emotes[0]);
 startEmotes();
 
-window.addEventListener('load', () => {
-  fetchServerData().then(scheduleFetch);
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof fetchServerData === 'function') {
+    fetchServerData().then(scheduleFetch);
+  }
   navigator.serviceWorker?.register('/dormguard-app/sw.js');
   
   setTimeout(() => {
@@ -562,7 +593,7 @@ window.addEventListener('load', () => {
       splash.style.opacity = '0';
       setTimeout(() => splash.remove(), 400);
     }
-  }, 1200);
+  }, 1000);
 });
 
 document.addEventListener('visibilitychange', () => {
