@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const toast = document.createElement("div");
     toast.className = "toast";
-    toast.innerHTML = `<span class="material-symbols-outlined">${icon}</span>${message}`;
+    toast.innerHTML = `<span class="material-symbols-rounded">${icon}</span>${message}`;
     document.body.appendChild(toast);
 
     requestAnimationFrame(() => {
@@ -141,6 +141,49 @@ document.addEventListener("DOMContentLoaded", () => {
       }, { once: true });
     }, 2500);
   }
+  
+
+const emoteToastMessages = [
+  'W-what?',
+  "Don't touch me!!",
+  'Stop being annoying!!',
+  'Leave me alone!',
+  'I said NO!',
+  'Heyyyy!!',
+  'Quit it!!',
+  'Go away!!',
+  'Not now!!',
+];
+
+function showEmoteToast(message) {
+  haptic(30);
+  const existing = document.querySelector('.toast-emote');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast-emote';
+  toast.innerHTML = `<span class="material-symbols-rounded">sentiment_stressed</span>${message}`;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => toast.classList.add('show'));
+  });
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+  }, 2500);
+}
+
+document.getElementById('screen').addEventListener('click', () => {
+  const msg = emoteToastMessages[Math.floor(Math.random() * emoteToastMessages.length)];
+  showEmoteToast(msg);
+});
+
+if (navigator.getBattery) {
+  navigator.getBattery().then(battery => {
+    battery.addEventListener('chargingchange', () => {
+      if (document.querySelector('#home.active')) showEmoteToast('Bzzzt!');
+    });
+  });
+}
 
   document.querySelectorAll(".md-input, .md-input2").forEach(textarea => {
     const page = textarea.closest(".stp-page");
@@ -181,7 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const doneBtn = document.createElement("button");
     doneBtn.className = "stp-done-btn md-btn";
-    doneBtn.innerHTML = `<span class="material-symbols-outlined">check</span>`;
+    doneBtn.innerHTML = `<span class="material-symbols-rounded">check</span>`;
     doneBtn.addEventListener("mousedown", (e) => {
       e.preventDefault();
       textarea.blur();
@@ -276,7 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     overlay.innerHTML = `
       <div class="md-dialog">
-        <span class="material-symbols-outlined md-dialog-icon">warning</span>
+        <span class="material-symbols-rounded md-dialog-icon">warning</span>
         <div class="md-dialog-title">Reset Config?</div>
         <div class="md-dialog-body">All saved URLs will be cleared. This cannot be undone.</div>
         <div class="md-dialog-actions">
@@ -350,5 +393,4 @@ document.addEventListener("DOMContentLoaded", () => {
       if (stpPages) stpPages.scrollTo({ left: 0, behavior: "smooth" });
     });
   });
-
 });
