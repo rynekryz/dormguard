@@ -42,7 +42,7 @@
 - Reduce motion toggle (some people hate animation)
 - Progressive Web App — installable on mobile (yes, apple devices supported too since it web based)
 - Offline-capable via service worker (uhmm, its broken for now)
-- Material design 3 
+- Material design 3 Expressive
 - etc.
 
 <div align="center">
