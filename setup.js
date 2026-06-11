@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-
   const stpPages = document.querySelector(".stp-pages");
   const dots = document.querySelectorAll(".stp-dot");
 
@@ -13,20 +12,29 @@ document.addEventListener("DOMContentLoaded", () => {
   if (stpPages && dots.length) {
     const totalPages = dots.length;
 
+    let scrollTicking = false;
     const updateDots = () => {
-      const index = Math.round(stpPages.scrollLeft / stpPages.clientWidth);
-      dots.forEach((dot, i) => dot.classList.toggle("active", i === index));
+      if (!scrollTicking) {
+        requestAnimationFrame(() => {
+          const width = stpPages.clientWidth || 1;
+          const index = Math.round(stpPages.scrollLeft / width);
+          dots.forEach((dot, i) => dot.classList.toggle("active", i === index));
+          scrollTicking = false;
+        });
+        scrollTicking = true;
+      }
     };
 
-    stpPages.addEventListener("scroll", updateDots);
-    window.addEventListener("resize", updateDots);
+    stpPages.addEventListener("scroll", updateDots, { passive: true });
+    window.addEventListener("resize", updateDots, { passive: true });
 
     const scrollToPage = (index) => {
       stpPages.scrollTo({ left: stpPages.clientWidth * index, behavior: "smooth" });
     };
 
     const nextPage = () => {
-      const current = Math.round(stpPages.scrollLeft / stpPages.clientWidth);
+      const width = stpPages.clientWidth || 1;
+      const current = Math.round(stpPages.scrollLeft / width);
       scrollToPage((current + 1) % totalPages);
     };
 
@@ -141,49 +149,48 @@ document.addEventListener("DOMContentLoaded", () => {
       }, { once: true });
     }, 2500);
   }
-  
 
-const emoteToastMessages = [
-  'W-what?',
-  "Don't touch me!!",
-  'Stop being annoying!!',
-  'Leave me alone!',
-  'I said NO!',
-  'Heyyyy!!',
-  'Quit it!!',
-  'Go away!!',
-  'Not now!!',
-];
+  const emoteToastMessages = [
+    'W-what?', "Don't touch me!!", 'Stop being annoying!!', 
+    'Leave me alone!', 'I said NO!', 'Heyyyy!!', 'Quit it!!', 
+    'Go away!!', 'Not now!!'
+  ];
 
-function showEmoteToast(message) {
-  haptic(30);
-  const existing = document.querySelector('.toast-emote');
-  if (existing) existing.remove();
-  const toast = document.createElement('div');
-  toast.className = 'toast-emote';
-  toast.innerHTML = `<span class="material-symbols-rounded">sentiment_stressed</span>${message}`;
-  document.body.appendChild(toast);
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => toast.classList.add('show'));
-  });
-  setTimeout(() => {
-    toast.classList.remove('show');
-    toast.addEventListener('transitionend', () => toast.remove(), { once: true });
-  }, 2500);
-}
-
-document.getElementById('screen').addEventListener('click', () => {
-  const msg = emoteToastMessages[Math.floor(Math.random() * emoteToastMessages.length)];
-  showEmoteToast(msg);
-});
-
-if (navigator.getBattery) {
-  navigator.getBattery().then(battery => {
-    battery.addEventListener('chargingchange', () => {
-      if (document.querySelector('#home.active')) showEmoteToast('Bzzzt!');
+  function showEmoteToast(message) {
+    haptic(30);
+    const existing = document.querySelector('.toast-emote');
+    if (existing) existing.remove();
+    const toast = document.createElement('div');
+    toast.className = 'toast-emote';
+    toast.innerHTML = `<span class="material-symbols-rounded">sentiment_stressed</span>${message}`;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => toast.classList.add('show'));
     });
-  });
-}
+    setTimeout(() => {
+      toast.classList.remove('show');
+      toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+    }, 2500);
+  }
+
+  const screenEl = document.getElementById('screen');
+  if (screenEl) {
+    screenEl.addEventListener('click', () => {
+      const msg = emoteToastMessages[Math.floor(Math.random() * emoteToastMessages.length)];
+      showEmoteToast(msg);
+    });
+  }
+
+  if (navigator.getBattery) {
+    navigator.getBattery().then(battery => {
+      battery.addEventListener('chargingchange', () => {
+        const homePage = document.getElementById('home');
+        if (homePage && homePage.classList.contains('active')) {
+          showEmoteToast('Bzzzt!');
+        }
+      });
+    });
+  }
 
   document.querySelectorAll(".md-input, .md-input2").forEach(textarea => {
     const page = textarea.closest(".stp-page");
@@ -222,13 +229,16 @@ if (navigator.getBattery) {
       ta.classList.toggle("stp-has-value", hasVal);
     };
 
-    const doneBtn = document.createElement("button");
-    doneBtn.className = "stp-done-btn md-btn";
-    doneBtn.innerHTML = `<span class="material-symbols-rounded">check</span>`;
-    doneBtn.addEventListener("mousedown", (e) => {
-      e.preventDefault();
-      textarea.blur();
-    });
+    let doneBtn = page.querySelector(".stp-done-btn");
+    if (!doneBtn) {
+      doneBtn = document.createElement("button");
+      doneBtn.className = "stp-done-btn md-btn";
+      doneBtn.innerHTML = `<span class="material-symbols-rounded">check</span>`;
+      doneBtn.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        textarea.blur();
+      });
+    }
 
     let expandTimer   = null;
     let collapseTimer = null;
@@ -272,10 +282,7 @@ if (navigator.getBattery) {
       if (cancelDecode) { cancelDecode(); cancelDecode = null; }
 
       doneBtn.classList.remove("show");
-      doneBtn.addEventListener("transitionend", () => {
-        if (doneBtn.parentNode) doneBtn.remove();
-      }, { once: true });
-
+      
       collapseTimer = setTimeout(() => {
         page.classList.remove("stp-expanded");
         textarea.classList.remove("stp-textarea-active");
@@ -290,6 +297,7 @@ if (navigator.getBattery) {
         } else {
           haptic(30);
         }
+        if (doneBtn.parentNode) doneBtn.remove();
       }, 300);
     };
 
