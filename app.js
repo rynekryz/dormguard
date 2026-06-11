@@ -1,196 +1,173 @@
 const { StatusBar } = window.Capacitor?.Plugins || {};
 const { Filesystem, Share } = window.Capacitor?.Plugins || {};
-const isCapacitor = !!(window.Capacitor?.isNativePlatform?.());
-const getUrl = (key) => { const v = localStorage.getItem(key); if (!v) return ''; try { atob(v); return decodeURIComponent(escape(atob(v))); } catch { return v; } };
+const IS_CAPACITOR = !!(window.Capacitor?.isNativePlatform?.());
 
-const vibrationSwitch     = document.getElementById('vibrationSwitch');
-const pages               = document.querySelectorAll('.page');
-const buttons             = document.querySelectorAll('.nav-item');
-const mdButtons           = document.querySelectorAll('.md-btn');
-const doorStatusEl        = document.getElementById('doorStatus');
-const currentTimeEl       = document.getElementById('currentTime');
-const eventListEl         = document.getElementById('eventList');
-const lastOpenedEl        = document.getElementById('LastOpened');
-const fullDatBtn          = document.getElementById('fulldat');
-const latestDatBtn        = document.getElementById('latestdat');
-const viewDatBtn          = document.getElementById('viewdat');
-const alertToggle         = document.getElementById('alertToggle');
-const alertSwitch         = document.getElementById('alertSwitch');
-const darkModeSwitch      = document.getElementById('darkModeSwitch');
-const contrastSwitch      = document.getElementById('contrastSwitch');
-const reduceMotionSwitch  = document.getElementById('reduceMotionSwitch');
-const themeMeta           = document.querySelector('meta[name="theme-color"]');
-const defaultMetaColor    = 'rgb(252, 248, 248)';
+const getUrl = key => {
+  const v = localStorage.getItem(key);
+  if (!v) return '';
+  try { return decodeURIComponent(escape(atob(v))); } catch { return v; }
+};
+
+const $ = id => document.getElementById(id);
+
+const EL = {
+  vibrationSwitch:    $('vibrationSwitch'),
+  pages:              document.querySelectorAll('.page'),
+  navBtns:            document.querySelectorAll('.nav-item'),
+  mdBtns:             document.querySelectorAll('.md-btn'),
+  doorStatus:         $('doorStatus'),
+  currentTime:        $('currentTime'),
+  eventList:          $('eventList'),
+  fullDatBtn:         $('fulldat'),
+  latestDatBtn:       $('latestdat'),
+  viewDatBtn:         $('viewdat'),
+  alertToggle:        $('alertToggle'),
+  alertSwitch:        $('alertSwitch'),
+  darkModeSwitch:     $('darkModeSwitch'),
+  contrastSwitch:     $('contrastSwitch'),
+  reduceMotionSwitch: $('reduceMotionSwitch'),
+  themeMeta:          document.querySelector('meta[name="theme-color"]'),
+  screen:             $('screen'),
+  splash:             $('splash'),
+  homeH1:             document.querySelector('#home h1'),
+};
 
 window.API_KEY = getUrl('api_url');
 
+const _vibrate = navigator.vibrate?.bind(navigator);
 let vibrationEnabled = localStorage.getItem('vibration') !== 'off';
-if (vibrationSwitch) vibrationSwitch.checked = !vibrationEnabled;
+navigator.vibrate = pattern => vibrationEnabled && _vibrate?.(pattern);
 
-const _vibrate = navigator.vibrate.bind(navigator);
-navigator.vibrate = (pattern) => {
-  if (vibrationEnabled) return _vibrate(pattern);
-  return false;
-};
-
-if (vibrationSwitch) {
-  vibrationSwitch.addEventListener('change', () => {
-    vibrationEnabled = !vibrationSwitch.checked;
+if (EL.vibrationSwitch) {
+  EL.vibrationSwitch.checked = !vibrationEnabled;
+  EL.vibrationSwitch.addEventListener('change', () => {
+    vibrationEnabled = !EL.vibrationSwitch.checked;
     localStorage.setItem('vibration', vibrationEnabled ? 'on' : 'off');
   });
 }
 
-let doorOpenTimer    = null;
-let doorOpenInterval = null;
-let alertDisabled    = false;
-let alertEnabled     = true;
-let isDownloading    = false;
+let alertEnabled = localStorage.getItem('alert') === 'on';
+let isDownloading = false;
 
-function updateClock() {
-  const now = new Date();
-  const h = now.getHours().toString().padStart(2, '0');
-  const m = now.getMinutes().toString().padStart(2, '0');
-  const s = now.getSeconds().toString().padStart(2, '0');
-  currentTimeEl.textContent = `${h}:${m}:${s}`;
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-if (alertSwitch) {
-  alertEnabled = localStorage.getItem('alert') === 'on';
-  alertSwitch.checked = alertEnabled;
-
-  alertSwitch.addEventListener('change', () => {
-    alertEnabled = alertSwitch.checked;
+if (EL.alertSwitch) {
+  EL.alertSwitch.checked = alertEnabled;
+  EL.alertSwitch.addEventListener('change', () => {
+    alertEnabled = EL.alertSwitch.checked;
     localStorage.setItem('alert', alertEnabled ? 'on' : 'off');
-
-    if (!alertEnabled && doorOpenInterval) {
-      clearInterval(doorOpenInterval);
-      doorOpenInterval = null;
-      alertToggle.textContent = 'No Alert';
-      doorStatusEl.style.color = '';
-      alertDisabled = false;
-    }
   });
 }
 
-function addEvent(text, time = null) {
-  const li = document.createElement('li');
-  li.textContent = `${time || new Date().toLocaleTimeString()} — ${text}`;
-  eventListEl.prepend(li);
-}
-
-function formatAMPM(date) {
+const formatAMPM = date => {
   if (!(date instanceof Date) || isNaN(date)) return '-';
   let h = date.getHours();
   const m = date.getMinutes().toString().padStart(2, '0');
   const ampm = h >= 12 ? 'PM' : 'AM';
   h = h % 12 || 12;
   return `${h}:${m} ${ampm}`;
-}
+};
 
-function formatDate(date) {
+const formatDate = date => {
   if (!(date instanceof Date) || isNaN(date)) return '-';
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-}
+};
+
+let lastDoorState = null;
+let fetchTimer = null;
 
 async function fetchSheetData() {
   try {
     const res = await fetch(window.API_KEY);
     const raw = await res.json();
     const rows = raw.values || raw || [];
-
     const history = rows.slice(0).reverse().map(row => {
-      let door    = row.door || row[2] || 'UNKNOWN';
-      let rawTime = row.time || row[0];
-      let rawDate = row.date || row[1];
-
-      let time = '-', date = '-';
-      if (rawTime) { const d = new Date(rawTime); if (!isNaN(d)) time = formatAMPM(d); }
-      if (rawDate) { const d = new Date(rawDate); if (!isNaN(d)) date = formatDate(d); }
-      return { time, date, door };
+      const rawTime = row.time || row[0];
+      const rawDate = row.date || row[1];
+      const door    = row.door || row[2] || 'UNKNOWN';
+      const td = rawTime ? new Date(rawTime) : null;
+      const dd = rawDate ? new Date(rawDate) : null;
+      return {
+        time: td && !isNaN(td) ? formatAMPM(td) : '-',
+        date: dd && !isNaN(dd) ? formatDate(dd) : '-',
+        door,
+      };
     });
-
-    const lastRow    = history[0] || { door: 'UNKNOWN' };
-    const lastOpened = history.find(e => e.door === 'OPEN');
-    return { current: { door: lastRow.door }, history, lastOpened: lastOpened || null };
-  } catch (err) {
-    console.error('fetch failed', err);
+    return {
+      current:    history[0] || { door: 'UNKNOWN' },
+      history,
+      lastOpened: history.find(e => e.door === 'OPEN') || null,
+    };
+  } catch {
     return null;
   }
 }
 
 async function fetchServerData() {
-  try {
-    const data = await fetchSheetData();
-    if (!data) return;
+  const data = await fetchSheetData();
+  if (!data) return;
 
-    doorStatusEl.textContent = data.current.door;
+  if (EL.doorStatus.textContent !== data.current.door)
+    EL.doorStatus.textContent = data.current.door;
 
-    eventListEl.innerHTML = '';
-data.history.forEach(item => {
-  const li = document.createElement('li');
-  const isOpen = item.door.toLowerCase() === 'open';
-li.classList.add(isOpen ? 'open' : 'closed');
-li.innerHTML = `
-  <span class="log-icon">
-    <span class="material-symbols-rounded">${isOpen ? 'lock_open' : 'lock'}</span>
-  </span>
-  <span class="log-datetime">${item.time} | ${item.date}</span>
-  <span class="log-door">${item.door}</span>
-`;
-  eventListEl.append(li);
-});
+  const frag = document.createDocumentFragment();
+  data.history.forEach(item => {
+    const li   = document.createElement('li');
+    const isOpen = item.door.toLowerCase() === 'open';
+    li.className = isOpen ? 'open' : 'closed';
+    li.innerHTML = `<span class="log-icon"><span class="material-symbols-rounded">${isOpen ? 'lock_open' : 'lock'}</span></span><span class="log-datetime">${item.time} | ${item.date}</span><span class="log-door">${item.door}</span>`;
+    frag.appendChild(li);
+  });
+  EL.eventList.replaceChildren(frag);
 
-if (data.lastOpened) {
-  const [time, period] = data.lastOpened.time.split(' ');
-  const [hour, min] = time.split(':');
+  const hourEl = $('lastOpenedHour');
+  const minEl  = $('lastOpenedMin');
 
-  const newHour = hour.padStart(2, '0');
-  const newMin = min;
-
-  const hourEl = document.getElementById('lastOpenedHour');
-  const minEl = document.getElementById('lastOpenedMin');
-
-  const changed = hourEl.textContent !== newHour || minEl.textContent !== newMin;
-
-  hourEl.textContent = newHour;
-  minEl.textContent = newMin;
-  document.getElementById('lastOpenedDate').textContent = data.lastOpened.date;
-
-  if (changed) {
-    const lastOpened = document.getElementById('LastOpened');
-    lastOpened.classList.remove('pop');
-    void lastOpened.offsetWidth;
-    lastOpened.classList.add('pop');
-    if (navigator.vibrate) navigator.vibrate(48);
-  }
-} else {
-  document.getElementById('lastOpenedHour').textContent = '-';
-  document.getElementById('lastOpenedMin').textContent = '';
-}
-  } catch (err) {
-    console.error('UI update failed', err);
+  if (data.lastOpened) {
+    const [time, period] = data.lastOpened.time.split(' ');
+    const [hour, min]    = time.split(':');
+    const newHour = hour.padStart(2, '0');
+    const changed = hourEl.textContent !== newHour || minEl.textContent !== min;
+    hourEl.textContent = newHour;
+    minEl.textContent  = min;
+    $('lastOpenedDate').textContent = data.lastOpened.date;
+    if (changed) {
+      const lo = $('LastOpened');
+      lo.classList.remove('pop');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          lo.classList.add('pop');
+        });
+      });
+      navigator.vibrate(48);
+    }
+  } else {
+    hourEl.textContent = '-';
+    minEl.textContent  = '';
   }
 }
 
-viewDatBtn?.addEventListener('click', () => {
+function scheduleFetch() {
+  clearTimeout(fetchTimer);
+  fetchTimer = setTimeout(async () => {
+    await fetchServerData();
+    scheduleFetch();
+  }, 5000);
+}
+
+EL.viewDatBtn?.addEventListener('click', () => {
   const url = getUrl('sheets_url');
-  if (!url) return;
-  window.open(url, '_blank');
+  if (url) window.open(url, '_blank');
 });
 
 async function downloadCSV(filename, limit = null) {
   if (isDownloading) return;
   isDownloading = true;
 
-  const btn      = limit ? latestDatBtn : fullDatBtn;
-  const otherBtn = limit ? fullDatBtn : latestDatBtn;
+  const btn      = limit ? EL.latestDatBtn : EL.fullDatBtn;
+  const otherBtn = limit ? EL.fullDatBtn   : EL.latestDatBtn;
   const origText = btn.textContent;
 
-  btn.textContent   = '';
-  btn.disabled      = true;
-  otherBtn.disabled = true;
+  btn.textContent = '';
+  btn.disabled = otherBtn.disabled = true;
 
   const spinner = document.createElement('md-circular-progress');
   spinner.setAttribute('indeterminate', '');
@@ -199,124 +176,104 @@ async function downloadCSV(filename, limit = null) {
   try {
     const data = await fetchSheetData();
     if (!data) return;
-
     const rows = limit ? data.history.slice(0, limit) : data.history;
-    const csv  = ['Time,Date,Door']
-      .concat(rows.map(e => `${e.time},${e.date},${e.door}`))
-      .join('\n');
+    const csv  = ['Time,Date,Door'].concat(rows.map(e => `${e.time},${e.date},${e.door}`)).join('\n');
 
-    if (isCapacitor && Filesystem) {
-      await Filesystem.writeFile({
-        path: filename,
-        data: btoa(unescape(encodeURIComponent(csv))),
-        directory: 'CACHE',
-        encoding: 'BASE64'
-      });
-      const fileResult = await Filesystem.getUri({
-        path: filename,
-        directory: 'CACHE'
-      });
-      await Share?.share({
-        title: filename,
-        url: fileResult.uri,
-        dialogTitle: 'Save CSV'
-      });
+    if (IS_CAPACITOR && Filesystem) {
+      await Filesystem.writeFile({ path: filename, data: btoa(unescape(encodeURIComponent(csv))), directory: 'CACHE', encoding: 'BASE64' });
+      const { uri } = await Filesystem.getUri({ path: filename, directory: 'CACHE' });
+      await Share?.share({ title: filename, url: uri, dialogTitle: 'Save CSV' });
     } else {
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const link = document.createElement('a');
-      link.href     = URL.createObjectURL(blob);
-      link.download = filename;
-      link.click();
+      const a  = document.createElement('a');
+      a.href   = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
     }
   } finally {
     spinner.remove();
-    btn.textContent   = origText;
-    btn.disabled      = false;
-    otherBtn.disabled = false;
-    isDownloading     = false;
+    btn.textContent = origText;
+    btn.disabled = otherBtn.disabled = false;
+    isDownloading = false;
   }
 }
 
-fullDatBtn.addEventListener('click',   () => downloadCSV('full_records.csv'));
-latestDatBtn.addEventListener('click', () => downloadCSV('latest_records.csv', 50));
+EL.fullDatBtn.addEventListener('click',   () => downloadCSV('full_records.csv'));
+EL.latestDatBtn.addEventListener('click', () => downloadCSV('latest_records.csv', 50));
 
-buttons.forEach(btn => {
+EL.navBtns.forEach(btn => {
   btn.addEventListener('click', () => {
-    if (navigator.vibrate) navigator.vibrate(32);
-    buttons.forEach(b => b.classList.remove('active'));
+    navigator.vibrate(32);
+    EL.navBtns.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    pages.forEach(p => p.classList.remove('active'));
-    document.getElementById(btn.dataset.page).classList.add('active');
+    EL.pages.forEach(p => p.classList.remove('active'));
+    $(btn.dataset.page).classList.add('active');
     document.querySelector('.toast-emote')?.remove();
   });
 });
 
-mdButtons.forEach(btn => {
+EL.mdBtns.forEach(btn => {
   btn.addEventListener('click', e => {
     const circle = document.createElement('span');
-    circle.classList.add('ripple');
+    const d      = Math.max(btn.clientWidth, btn.clientHeight);
+    const rect   = btn.getBoundingClientRect();
+    circle.className    = 'ripple';
+    circle.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - rect.left - d / 2}px;top:${e.clientY - rect.top - d / 2}px`;
     btn.appendChild(circle);
-    const d = Math.max(btn.clientWidth, btn.clientHeight);
-    circle.style.width  = circle.style.height = d + 'px';
-    circle.style.left   = e.clientX - btn.getBoundingClientRect().left - d / 2 + 'px';
-    circle.style.top    = e.clientY - btn.getBoundingClientRect().top  - d / 2 + 'px';
     circle.classList.add('ripple-animate');
-    circle.addEventListener('animationend', () => circle.remove());
+    circle.addEventListener('animationend', () => circle.remove(), { once: true });
   });
 });
 
-function getCurrentTheme() {
-  return document.body.classList.contains('dark') ? 'dark' : 'light';
-}
+const getCurrentTheme = () => document.body.classList.contains('dark') ? 'dark' : 'light';
 
 function applyTheme(theme) {
   document.body.classList.remove('light', 'dark');
   document.body.classList.add(theme);
 }
 
-function applyContrastForCurrentTheme() {
+function applyContrast() {
   document.body.classList.remove('contrast-light', 'contrast-dark');
-  if (!contrastSwitch.checked) return;
-  document.body.classList.add(getCurrentTheme() === 'dark' ? 'contrast-dark' : 'contrast-light');
+  if (EL.contrastSwitch.checked)
+    document.body.classList.add(getCurrentTheme() === 'dark' ? 'contrast-dark' : 'contrast-light');
 }
 
 function updateThemeColor() {
-  const bg = getComputedStyle(document.body)
-    .getPropertyValue('--md-sys-color-surface')
-    .trim();
-  themeMeta?.setAttribute('content', bg || defaultMetaColor);
-
-  const isDark = document.body.classList.contains('dark');
+  const bg = getComputedStyle(document.body).getPropertyValue('--md-sys-color-surface').trim();
+  EL.themeMeta?.setAttribute('content', bg || 'rgb(252,248,248)');
   if (StatusBar) {
+    const isDark = document.body.classList.contains('dark');
     try {
       StatusBar.setBackgroundColor({ color: isDark ? '#121212' : '#fcf8f8' });
       StatusBar.setStyle({ style: isDark ? 'DARK' : 'LIGHT' });
-    } catch(e) {}
+    } catch {}
   }
 }
 
-darkModeSwitch.addEventListener('change', () => {
-  const theme = darkModeSwitch.checked ? 'dark' : 'light';
-  applyTheme(theme);
-  applyContrastForCurrentTheme();
-  localStorage.setItem('theme', theme);
+EL.darkModeSwitch.addEventListener('change', () => {
+  applyTheme(EL.darkModeSwitch.checked ? 'dark' : 'light');
+  applyContrast();
+  localStorage.setItem('theme', EL.darkModeSwitch.checked ? 'dark' : 'light');
   updateThemeColor();
 });
 
-contrastSwitch.addEventListener('change', () => {
-  applyContrastForCurrentTheme();
-  localStorage.setItem('contrast', contrastSwitch.checked ? 'on' : 'off');
+EL.contrastSwitch.addEventListener('change', () => {
+  applyContrast();
+  localStorage.setItem('contrast', EL.contrastSwitch.checked ? 'on' : 'off');
   updateThemeColor();
 });
 
 (function restoreSettings() {
-  const savedTheme = localStorage.getItem('theme') || 'light';
-  applyTheme(savedTheme);
-  darkModeSwitch.checked = savedTheme === 'dark';
-
+  const t = localStorage.getItem('theme') || 'light';
+  applyTheme(t);
+  EL.darkModeSwitch.checked = t === 'dark';
   if (localStorage.getItem('contrast') === 'on') {
-    contrastSwitch.checked = true;
-    applyContrastForCurrentTheme();
+    EL.contrastSwitch.checked = true;
+    applyContrast();
+  }
+  if (localStorage.getItem('reduceMotion') === 'on') {
+    document.body.classList.add('no-animation');
+    EL.reduceMotionSwitch.checked = true;
   }
 })();
 
@@ -327,36 +284,25 @@ if (window.Capacitor) {
   updateThemeColor();
 }
 
-reduceMotionSwitch.addEventListener('change', () => {
-  document.body.classList.toggle('no-animation', reduceMotionSwitch.checked);
-  localStorage.setItem('reduceMotion', reduceMotionSwitch.checked ? 'on' : 'off');
+EL.reduceMotionSwitch.addEventListener('change', () => {
+  document.body.classList.toggle('no-animation', EL.reduceMotionSwitch.checked);
+  localStorage.setItem('reduceMotion', EL.reduceMotionSwitch.checked ? 'on' : 'off');
 });
-
-if (localStorage.getItem('reduceMotion') === 'on') {
-  document.body.classList.add('no-animation');
-  reduceMotionSwitch.checked = true;
-}
 
 document.addEventListener('contextmenu', e => e.preventDefault());
-const configArea = document.querySelector('.user-config');
 
+const configArea = document.querySelector('.user-config');
 document.addEventListener('pointerdown', e => {
-  if (e.pointerType === 'touch' && configArea && !configArea.contains(e.target)) {
+  if (e.pointerType === 'touch' && configArea && !configArea.contains(e.target))
     e.preventDefault();
-  }
-});
+}, { passive: false });
 
 document.querySelectorAll('img').forEach(img => img.setAttribute('draggable', 'false'));
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/dormguard-app/sw.js');
-}
-
 document.querySelectorAll('.collapsible').forEach(header => {
   header.addEventListener('click', () => {
-    const content = document.getElementById(header.dataset.target);
+    const content = $(header.dataset.target);
     const isOpen  = content.classList.contains('open');
-
     if (isOpen) {
       content.style.height = content.scrollHeight + 'px';
       requestAnimationFrame(() => {
@@ -368,7 +314,6 @@ document.querySelectorAll('.collapsible').forEach(header => {
       content.classList.add('open');
       header.classList.add('open');
       content.style.height = content.scrollHeight + 'px';
-
       content.addEventListener('transitionend', () => {
         if (content.classList.contains('open')) {
           content.style.height = 'auto';
@@ -379,63 +324,73 @@ document.querySelectorAll('.collapsible').forEach(header => {
   });
 });
 
-document.getElementById('openSetupBtn').addEventListener('click', () => {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const settingsPage = document.getElementById('settings');
-  settingsPage.classList.add('active');
-
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+$('openSetupBtn').addEventListener('click', () => {
+  EL.pages.forEach(p => p.classList.remove('active'));
+  $('settings').classList.add('active');
+  EL.navBtns.forEach(b => b.classList.remove('active'));
   document.querySelector('.nav-item[data-page="settings"]').classList.add('active');
 
   const collapsible = document.querySelector('.settings-item.collapsible[data-target="apiConfig"]');
-  const content     = document.getElementById(collapsible.dataset.target);
+  const content     = $(collapsible.dataset.target);
 
   setTimeout(() => {
-    const targetSection = document.getElementById('configSection');
-    if (targetSection) {
-      targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-      setTimeout(() => {
-        if (!content.classList.contains('open')) {
-          collapsible.classList.add('open');
-          content.classList.add('open', 'animating');
-          content.style.height = content.scrollHeight + 'px';
-
-          content.addEventListener('transitionend', () => {
-            content.style.height = 'auto';
-            content.classList.remove('animating');
-            setTimeout(() => {
-              content.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
-          }, { once: true });
-        }
-      }, 600);
-    }
+    $('configSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => {
+      if (!content.classList.contains('open')) {
+        collapsible.classList.add('open');
+        content.classList.add('open', 'animating');
+        content.style.height = content.scrollHeight + 'px';
+        content.addEventListener('transitionend', () => {
+          content.style.height = 'auto';
+          content.classList.remove('animating');
+          setTimeout(() => content.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        }, { once: true });
+      }
+    }, 600);
   }, 1000);
 });
 
-setInterval(fetchServerData, 5000);
-fetchServerData();
+let hideSeconds = false;
+const clockContainer = EL.currentTime.parentElement; 
 
-// greetings
+if (clockContainer) {
+  const observer = new ResizeObserver(entries => {
+    for (let entry of entries) {
+      const fontSize = parseFloat(window.getComputedStyle(EL.currentTime).fontSize);
+      hideSeconds = entry.contentRect.width < (fontSize * 4.6); 
+    }
+  });
+  observer.observe(clockContainer);
+}
 
-let shakeReady = false;
-setTimeout(() => { shakeReady = true; }, 5000);
+let lastClockStr = "";
+let clockRAF;
+
+function tickClock() {
+  if (!document.hidden) {
+    const now = new Date();
+    const h = now.getHours().toString().padStart(2, '0');
+    const m = now.getMinutes().toString().padStart(2, '0');
+    const s = now.getSeconds().toString().padStart(2, '0');
+
+    const currentClockStr = hideSeconds ? `${h}:${m}` : `${h}:${m}:${s}`;
+
+    if (currentClockStr !== lastClockStr) { 
+        EL.currentTime.textContent = currentClockStr;
+        lastClockStr = currentClockStr; 
+    }
+  }
+  clockRAF = setTimeout(tickClock, 1000 - new Date().getMilliseconds());
+}
+
+tickClock();
 
 function greetUser() {
-  const h1 = document.querySelector('#home h1');
+  const h1 = EL.homeH1;
   if (!h1) return;
 
   const hour = new Date().getHours();
-
-  const greeting =
-    hour < 12 ? 'Good Morning' :
-    hour < 17 ? 'Good Afternoon' :
-    hour < 21 ? 'Good Evening' :
-    'Good Night';
-
-  const greetText = `${greeting}!`;
-
+  const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : hour < 21 ? 'Good Evening' : 'Good Night';
   let isBusy = false;
 
   const fade = (content, delay) => setTimeout(() => {
@@ -446,38 +401,34 @@ function greetUser() {
 
   setTimeout(() => {
     isBusy = true;
-    fade(greetText, 0);
+    fade(`${greeting}!`, 0);
     setTimeout(() => {
       fade('DormGuard', 2000);
       setTimeout(() => { isBusy = false; }, 3000);
     }, 500);
   }, 2000);
 
-  const saveOriginals = () => {
+  const saveOriginals = () =>
     document.querySelectorAll('.home-bg .material-symbols-rounded').forEach(icon => {
       if (!icon.dataset.original) icon.dataset.original = icon.textContent.trim();
     });
-  };
 
   const iconsAtOriginal = () => {
     const icons = document.querySelectorAll('.home-bg .material-symbols-rounded');
     return [...icons].every(icon => !icon.dataset.original || icon.textContent.trim() === icon.dataset.original);
   };
 
-  const swapIcons = (to) => {
+  const swapIcons = to =>
     document.querySelectorAll('.home-bg .material-symbols-rounded').forEach((icon, i) => {
       setTimeout(() => {
-        icon.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-        icon.style.transform = `rotate(var(--r, 0deg)) rotateY(90deg)`;
-        icon.style.opacity = '0';
+        icon.style.cssText += ';transition:transform 0.3s ease,opacity 0.3s ease;transform:rotate(var(--r,0deg)) rotateY(90deg);opacity:0';
         setTimeout(() => {
           icon.textContent = to === 'original' ? icon.dataset.original : to;
-          icon.style.transform = `rotate(var(--r, 0deg)) rotateY(0deg)`;
+          icon.style.transform = 'rotate(var(--r,0deg)) rotateY(0deg)';
           icon.style.opacity = '0.1';
         }, 300);
       }, i * 40);
     });
-  };
 
   const showMessage = (text, iconName) => {
     isBusy = true;
@@ -487,226 +438,140 @@ function greetUser() {
     setTimeout(() => { h1.innerHTML = text; h1.style.opacity = '1'; }, 300);
     setTimeout(() => {
       h1.style.opacity = '0';
-      setTimeout(() => {
-        h1.innerHTML = original;
-        h1.style.opacity = '1';
-        setTimeout(() => { isBusy = false; }, 500);
-      }, 300);
+      setTimeout(() => { h1.innerHTML = original; h1.style.opacity = '1'; setTimeout(() => { isBusy = false; }, 500); }, 300);
     }, 2000);
-
     saveOriginals();
     swapIcons(iconName);
     setTimeout(() => swapIcons('original'), 2600);
   };
 
-  const isGreeting = () => {
-    const current = h1.innerHTML;
-    return current.includes('Good Morning') || current.includes('Good Afternoon') ||
-           current.includes('Good Evening') || current.includes('Good Night');
-  };
+  if (hour >= 0 && hour < 4)
+    setTimeout(() => { if (!isBusy) showMessage("Go sleep, its late", 'bedtime'); }, 7000);
 
-  if (hour >= 0 && hour < 4) {
-    setTimeout(() => {
-      if (!isBusy) showMessage("Go sleep, its late", 'bedtime');
-    }, 7000);
-  }
-
-if (navigator.getBattery) {
-  navigator.getBattery().then(battery => {
-    battery.addEventListener('chargingchange', () => {
-      showMessage(battery.charging ? 'Yummy!' : 'Ouch!',
-        battery.charging ? 'bolt' : (battery.level * 100 > 20 ? 'error' : 'sentiment_very_dissatisfied'));
-      showEmoteToast('Bzzzt!');
-    });
-    if (battery.charging) {
-      showMessage('Yummy!', 'bolt');
-      showEmoteToast('Bzzzt!');
-    }
+  navigator.getBattery?.().then(battery => {
+    const onCharge = () => showMessage(battery.charging ? 'Yummy!' : 'Ouch!', battery.charging ? 'bolt' : (battery.level * 100 > 20 ? 'error' : 'sentiment_very_dissatisfied'));
+    battery.addEventListener('chargingchange', onCharge);
+    if (battery.charging) onCharge();
   });
-}
 
   let idleTimer = null;
-
   const resetIdle = () => {
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(() => {
-      if (!isBusy && iconsAtOriginal()) showMessage('Still there?', 'sentiment_calm');
-    }, 120000);
+    idleTimer = setTimeout(() => { if (!isBusy && iconsAtOriginal()) showMessage('Still there?', 'sentiment_calm'); }, 120000);
   };
-
-  document.addEventListener('touchstart', resetIdle);
+  document.addEventListener('touchstart', resetIdle, { passive: true });
   resetIdle();
 
-  let shakeIndex = 0;
-  let lastShake = 0;
-  let shakeCount = 0;
-  let shakeWindowTimer = null;
+  let shakeIndex = 0, lastShake = 0, shakeCount = 0, shakeWindowTimer = null, shakeReady = false;
+  setTimeout(() => { shakeReady = true; }, 5000);
 
   const shakeStates = [
-    { message: 'Soo dizzy...', icon: 'sentiment_stressed' },
-    { message: 'Stop itt!',                  icon: 'sentiment_neutral' },
-    { message: 'My "head" hurts T-T',     icon: 'sick' },
+    { message: 'Soo dizzy...',       icon: 'sentiment_stressed' },
+    { message: 'Stop itt!',          icon: 'sentiment_neutral'  },
+    { message: 'My "head" hurts T-T',icon: 'sick'               },
   ];
 
-  const handleShake = (force) => {
+  const handleShake = force => {
     if (!shakeReady || isBusy || !iconsAtOriginal()) return;
-    if (isGreeting() && force < 64) return;
-
+    const isGreeting = h1.innerHTML.includes('Good ');
+    if (isGreeting && force < 64) return;
     const now = Date.now();
     if (now - lastShake > 1500) shakeCount = 0;
     shakeCount++;
     lastShake = now;
-
     clearTimeout(shakeWindowTimer);
     shakeWindowTimer = setTimeout(() => { shakeCount = 0; }, 1500);
-
     if (shakeCount < 3) return;
     shakeCount = 0;
     clearTimeout(shakeWindowTimer);
-
     const { message, icon } = shakeStates[shakeIndex];
     shakeIndex = (shakeIndex + 1) % shakeStates.length;
-
     showMessage(message, icon);
-    if (navigator.vibrate) navigator.vibrate([32, 30, 48]);
+    navigator.vibrate([32, 30, 48]);
   };
 
-  function onMotion(e) {
+  const onMotion = e => {
     const a = e.accelerationIncludingGravity || e.acceleration;
     if (!a) return;
     const force = Math.sqrt((a.x || 0) ** 2 + (a.y || 0) ** 2 + (a.z || 0) ** 2);
     if (force > 32) handleShake(force);
-  }
+  };
 
-  document.addEventListener('click', function initMotion() {
-    document.removeEventListener('click', initMotion);
-    window.addEventListener('devicemotion', onMotion);
-  }, { once: true });
+  document.addEventListener('click', () => window.addEventListener('devicemotion', onMotion), { once: true });
 }
 
 greetUser();
 
+EL.splash.addEventListener('click', () => navigator.vibrate(30));
+
+const COLS = 16, ROWS = 8;
+const emotes = [
+  [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],[0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0],[0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
+  [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0],[0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
+  [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],[0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,1,0,0,1,0,1,0,0,1,0,0,0,0],[0,0,0,0,1,1,0,1,0,1,1,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
+  [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,1,1,1,0,0,0,0,0,0,1,1,1,0,0],[0,1,0,0,0,1,0,0,0,0,1,0,0,0,1,0],[0,1,0,0,0,1,0,0,0,0,1,0,0,0,1,0],[0,0,1,1,1,0,0,0,0,0,0,1,1,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
+  [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
+  [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,1,1,1,0,0,0,0,0,0,1,1,1,0,0],[0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0],[0,0,1,1,1,0,0,0,0,0,0,1,1,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],
+];
+
+const cornerPixels = new Set(['0,0','0,15','7,0','7,15']);
+const cells = [];
+const matrixFragment = document.createDocumentFragment();
+
+for (let r = 0; r < ROWS; r++) {
+  cells[r] = [];
+  for (let c = 0; c < COLS; c++) {
+    const px = document.createElement('div');
+    px.className = 'px';
+    if (cornerPixels.has(`${r},${c}`)) px.classList.add('corner');
+    matrixFragment.appendChild(px);
+    cells[r][c] = px;
+  }
+}
+EL.screen.appendChild(matrixFragment);
+
+let emoteIndex = 0;
+let emoteTimer = null;
+
+const drawEmote = emote => {
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      cells[r][c].classList.toggle('on', emote[r][c] === 1);
+};
+
+const startEmotes = () => {
+  clearInterval(emoteTimer);
+  emoteTimer = setInterval(() => {
+    emoteIndex = (emoteIndex + 1) % emotes.length;
+    drawEmote(emotes[emoteIndex]);
+  }, 2500);
+};
+
+const stopEmotes = () => clearInterval(emoteTimer);
+
+drawEmote(emotes[0]);
+startEmotes();
+
 window.addEventListener('load', () => {
-  const splash = document.getElementById('splash');
-  splash.style.opacity = '0';
-  setTimeout(() => splash.remove(), 400);
+  fetchServerData().then(scheduleFetch);
+  navigator.serviceWorker?.register('/dormguard-app/sw.js');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const splash = EL.splash;
+      if (splash) {
+        splash.style.opacity = '0';
+        setTimeout(() => splash.remove(), 400); 
+      }
+    });
+  });
 });
 
-document.getElementById('splash').addEventListener('click', () => {
-  if (navigator.vibrate) navigator.vibrate(30);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    clearTimeout(fetchTimer);
+    stopEmotes();
+  } else {
+    startEmotes();
+    fetchServerData().then(scheduleFetch);
+  }
 });
-
-
-         const COLS = 16;
-         const ROWS = 8;
-         
-         const emotes = [
-           // ^_^ (Hi)
-           [
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],
-             [0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0],
-             [0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-           ],
-         
-           // >_<
-           [
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],
-             [0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0],
-             [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0],
-             [0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-           ],
-         
-           // ^w^
-           [
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],
-             [0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,0,1,0,0,1,0,1,0,0,1,0,0,0,0],
-             [0,0,0,0,1,1,0,1,0,1,1,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-           ],
-         
-           // o_o
-           [
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,1,1,1,0,0,0,0,0,0,1,1,1,0,0],
-             [0,1,0,0,0,1,0,0,0,0,1,0,0,0,1,0],
-             [0,1,0,0,0,1,0,0,0,0,1,0,0,0,1,0],
-             [0,0,1,1,1,0,0,0,0,0,0,1,1,1,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-           ],
-         
-           // -_- 
-           [
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-           ],
-         
-           // z_z 
-           [
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,1,1,1,0,0,0,0,0,0,1,1,1,0,0],
-             [0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0],
-             [0,0,1,1,1,0,0,0,0,0,0,1,1,1,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-           ],
-         ];
-         
-         const screen = document.getElementById('screen');
-         const cells = [];
-         
-         const cornerPixels = new Set([
-           '0,0',   
-           '0,15',  
-           '7,0',   
-           '7,15',  
-         ]);
-         
-         for (let r = 0; r < ROWS; r++) {
-           cells[r] = [];
-           for (let c = 0; c < COLS; c++) {
-             const px = document.createElement('div');
-             px.className = 'px';
-             if (cornerPixels.has(`${r},${c}`)) px.classList.add('corner');
-             screen.appendChild(px);
-             cells[r][c] = px;
-           }
-         }
-         
-         function drawEmote(emote) {
-           for (let r = 0; r < ROWS; r++) {
-             for (let c = 0; c < COLS; c++) {
-               cells[r][c].classList.toggle('on', emote[r][c] === 1);
-             }
-           }
-         }
-         
-         let i = 0;
-         drawEmote(emotes[i]);
-         
-         setInterval(() => {
-           i = (i + 1) % emotes.length;
-           drawEmote(emotes[i]);
-         }, 2500);
