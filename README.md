@@ -46,7 +46,7 @@
 - etc.
 
 <div align="center">
-<strong>Made with ♥︎ by Zenlixir</strong>
+<strong>Made with ♥︎ by Ryne</strong>
 </div>
 
 <div align="center">
