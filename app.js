@@ -555,15 +555,14 @@ startEmotes();
 window.addEventListener('load', () => {
   fetchServerData().then(scheduleFetch);
   navigator.serviceWorker?.register('/dormguard-app/sw.js');
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      const splash = EL.splash;
-      if (splash) {
-        splash.style.opacity = '0';
-        setTimeout(() => splash.remove(), 400); 
-      }
-    });
-  });
+  
+  setTimeout(() => {
+    const splash = EL.splash;
+    if (splash) {
+      splash.style.opacity = '0';
+      setTimeout(() => splash.remove(), 400);
+    }
+  }, 1200);
 });
 
 document.addEventListener('visibilitychange', () => {
