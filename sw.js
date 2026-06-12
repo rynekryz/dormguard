@@ -27,9 +27,9 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  if (url.hostname.includes('google')) return;
+  if (url.hostname.includes('sheets.googleapis.com') || url.hostname.includes('script.google.com')) return;
 
-  const isStatic = ASSETS.some(path => url.pathname.endsWith(path.replace('./', '')));
+  const isStatic = ASSETS.some(path => url.pathname === path || url.pathname === path + 'index.html');
 
   if (isStatic) {
     e.respondWith(
