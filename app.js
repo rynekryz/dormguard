@@ -112,6 +112,7 @@ async function fetchSheetData() {
 }
 
 async function fetchServerData() {
+  if (!window.API_KEY) return;
   const data = await fetchSheetData();
   if (!data || data.unchanged) return;
 
@@ -182,8 +183,9 @@ async function downloadCSV(filename, limit = null) {
   btn.textContent = '';
   btn.disabled = otherBtn.disabled = true;
 
-  const spinner = document.createElement('md-circular-progress');
-  spinner.setAttribute('indeterminate', '');
+  const spinner = document.createElement('div');
+  spinner.className = 'md-circular-progress';
+  spinner.innerHTML = '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="20"/></svg>';
   btn.appendChild(spinner);
 
   try {
@@ -417,6 +419,7 @@ tickClock();
 function greetUser() {
   const h1 = EL.homeH1;
   if (!h1) return;
+   h1.style.minHeight = h1.offsetHeight + 'px';
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : hour < 21 ? 'Good Evening' : 'Good Night';
