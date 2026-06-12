@@ -113,6 +113,13 @@ async function fetchSheetData() {
 
 async function fetchServerData() {
   if (!window.API_KEY) return;
+
+  if (!navigator.onLine) {
+    const cached = localStorage.getItem('cached_logs');
+    if (cached && EL.eventList) EL.eventList.innerHTML = cached;
+    return;
+  }
+
   const data = await fetchSheetData();
   if (!data || data.unchanged) return;
 
@@ -129,6 +136,7 @@ async function fetchServerData() {
     </li>`;
   });
   EL.eventList.innerHTML = htmlBuilder;
+  localStorage.setItem('cached_logs', htmlBuilder);
 
   const hourEl = $('lastOpenedHour');
   const minEl  = $('lastOpenedMin');
@@ -138,18 +146,16 @@ async function fetchServerData() {
     const [hour, min]    = time.split(':');
     const newHour = hour.padStart(2, '0');
     const changed = hourEl.textContent !== newHour || minEl.textContent !== min;
-    
+
     hourEl.textContent = newHour;
     minEl.textContent  = min;
     $('lastOpenedDate').textContent = data.lastOpened.date;
-    
+
     if (changed) {
       const lo = $('LastOpened');
       lo.classList.remove('pop');
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          lo.classList.add('pop');
-        });
+        requestAnimationFrame(() => lo.classList.add('pop'));
       });
       navigator.vibrate(48);
     }
