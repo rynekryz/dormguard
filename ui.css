@@ -8,7 +8,7 @@ font-size:clamp(14px,4vw,18px);overflow:hidden;overscroll-behavior:none;-webkit-
 }
 .material-symbols-rounded{font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 200,'opsz' 24}
 .home-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-.home-bg span{position:absolute;font-size:2.2rem;opacity:.1;color:var(--md-sys-color-on-surface);animation:floatIcon 6s ease-in-out infinite}
+.home-bg span{will-change: transform;position:absolute;font-size:2.2rem;opacity:.1;color:var(--md-sys-color-on-surface);animation:floatIcon 6s ease-in-out infinite}
 @keyframes floatIcon{0%,100%{transform:translateY(0) rotate(var(--r))}50%{transform:translateY(-.5rem) rotate(var(--r))}}
 .light{color-scheme:light;
 --md-sys-color-primary:rgb(88 92 96);--md-sys-color-on-primary:rgb(255 255 255);
@@ -49,7 +49,6 @@ font-size:clamp(14px,4vw,18px);overflow:hidden;overscroll-behavior:none;-webkit-
 @keyframes shield{from{opacity:0;transform:translateX(0) translateY(-50%)}to{opacity:1;transform:translateX(-70px) translateY(-50%)}}
 @keyframes stpExpand{from{transform:scale(.9);opacity:.5}to{transform:scale(1);opacity:1}}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.6}}
-@keyframes cardFadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.12)}70%{transform:scale(.95)}100%{transform:scale(1)}}
 #splash{position:fixed;inset:0;background:var(--md-sys-color-surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:9999;transition:opacity .4s ease}
 #splash .material-symbols-rounded{font-size:48px;color:var(--md-sys-color-primary)}
@@ -64,6 +63,13 @@ h1{position:relative;font-size:var(--fs-xl);margin-bottom:16px}
 #LastOpened{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;line-height:1}
 #lastOpenedHour,#lastOpenedMin{font-family:'Fredoka',sans-serif;font-weight:800;font-size:var(--fs-clock);line-height:.8}
 #lastOpenedDate{font-size:.85rem;font-weight:400;opacity:.6;margin-top:4px;text-align:center}
+.md-circular-progress{display:block;flex-shrink:0}
+.md-circular-progress svg{width:100%;height:100%;animation:spinner-rotate 1568ms linear infinite;will-change:transform}
+.md-circular-progress circle{fill:none;stroke:var(--md-sys-color-primary,#6750A4);stroke-width:4px;stroke-linecap:round;stroke-dasharray:125.664;animation:spinner-arc 1333ms cubic-bezier(.4,0,.2,1) infinite;transform-origin:center;transform:rotate(-90deg)}
+#splash .md-circular-progress{width:48px;height:48px}
+button .md-circular-progress{width:20px;height:20px;position:absolute;top:50%;left:50%;margin-top:-10px;margin-left:-10px;pointer-events:none}
+@keyframes spinner-rotate{to{transform:rotate(360deg)}}
+@keyframes spinner-arc{0%,100%{stroke-dashoffset:113}50%{stroke-dashoffset:12}}
 .card,.info,.another-info,.user-config,.tutorial,.about-card{border-radius:24px;padding:16px;margin-bottom:16px;background:var(--md-sys-color-surface-container)}
 .cards-grid{display:flex;gap:12px}
 .cards-grid > * {
@@ -105,7 +111,6 @@ button{position:relative}
 .nav-item:active{border-radius:12px}
 .md-btn::after{content:"";position:absolute;border-radius:50%;width:0;height:0;background:rgba(255,255,255,.3);top:50%;left:50%;transform:translate(-50%,-50%);opacity:0;pointer-events:none;transition:width .3s ease,height .3s ease,opacity .3s ease}
 .md-btn:active::after,.md-dialog-btn::after{width:200%;height:500%;opacity:1;transition:0s}
-button md-circular-progress{width:30px;height:30px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
 .md-input,.md-input2{width:100%;min-height:80px;max-height:180px;padding:18px;font-size:var(--fs-sm);font-weight:500;border-radius:28px;border:2px solid var(--md-sys-color-surface-container);background:none;color:var(--md-sys-color-on-surface);resize:none;overflow:hidden;user-select:text;-webkit-user-select:text;-webkit-tap-highlight-color:auto;touch-action:auto;transition:all .35s cubic-bezier(.34,1.4,.64,1)}
 .md-input:focus,.md-input2:focus{border-color:var(--md-sys-color-outline);outline:none}
 .md-input::-webkit-scrollbar,.md-input2::-webkit-scrollbar{display:none}
@@ -157,7 +162,7 @@ button md-circular-progress{width:30px;height:30px;position:absolute;top:50%;lef
 .log-datetime{flex:1;background:none;border-radius:0;padding:0;font-size:var(--fs-l);font-weight:600;text-align:center}
 .log-door{width:auto;flex-shrink:0;background:none;border-radius:0;padding:0;font-size:var(--fs-l);font-weight:600;color:var(--md-sys-color-outline)}
 #home{position:relative}
-#home::before{content:"security";font-family:'Material Symbols Rounded';line-height:1;position:fixed;top:58%;left:70%;transform:translate(-50%,-50%);font-size:12em;font-weight:600;color:var(--md-sys-color-surface-dim);opacity:0;pointer-events:none;z-index:0;animation:shield 1s ease forwards;animation-delay:1s}
+#home::before{content:"security";font-family:'Material Symbols Rounded';line-height:1;position:fixed;top:58%;left:70%;transform:translate(-50%,-50%);font-size:12em;font-weight:600;color:var(--md-sys-color-surface-dim);opacity:0;pointer-events:none;z-index:0;animation:shield 1s ease forwards;animation-delay:1s;will-change: transform, opacity;}
 .info{border:none;display:flex;justify-content:center;align-items:center;height:200px;flex-direction:column;text-align:center;gap:8px}
 .info img{width:100px;height:100px;border-radius:24%;object-fit:cover;display:block}
 .info-text div{font-size:var(--fs-md);color:var(--md-sys-color-on-surface)}
