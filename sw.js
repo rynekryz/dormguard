@@ -26,8 +26,22 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-
   if (url.hostname.includes('sheets.googleapis.com') || url.hostname.includes('script.google.com')) return;
+
+  if (url.hostname === 'github.com' || url.hostname === 'avatars.githubusercontent.com') {
+    e.respondWith(
+      caches.open(CACHE).then(cache =>
+        cache.match(e.request).then(cached => {
+          if (cached) return cached;
+          return fetch(e.request).then(res => {
+            cache.put(e.request, res.clone());
+            return res;
+          });
+        })
+      )
+    );
+    return;
+  }
 
   const isStatic = ASSETS.some(path => url.pathname === path || url.pathname === path + 'index.html');
 
