@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html>  
 <html lang="en">
    <head>
       <meta charset="UTF-8">
@@ -12,50 +12,42 @@
       <link rel="manifest" href="site.webmanifest" />
       <meta name="apple-mobile-web-app-title" content="DormGuard" />
       <meta name="color-scheme" content="dark light">
-      <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Google+Sans+Flex:opsz,wght@8..144,100..1000&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" 
-         rel="stylesheet" 
-         media="print" 
+      <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Google+Sans+Flex:opsz,wght@8..144,100..1000&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"   
+         rel="stylesheet"   
+         media="print"   
          onload="this.media='all'">
       <link rel="stylesheet" href="ui.css">
-      <script defer src="https://unpkg.com/@capacitor/core@6.0.0/dist/capacitor.js"></script>
-      <script defer src="setup.js"></script>
-      <script defer src="app.js"></script>
+      <script defer src="setup.js"></script>  
+      <script defer src="app.js"></script>  
    </head>
    <body class="light">
       <div id="splash">
-         <div class="md-circular-progress">
-            <svg viewBox="0 0 48 48">
-               <circle cx="24" cy="24" r="20"/>
-            </svg>
-         </div>
-         <p class="splash-hint">
-            <span>TAP!</span>
-            <span>TAP!</span>
-            <span>TAP!</span>
-         </p>
+         <aside class="loader" style="--wh-number: 24;">
+            <div class="pixel"></div>
+         </aside>
       </div>
-      <div class="home-bg">
-         <span class="material-symbols-rounded" style="top:5%;  left:72%; --r:20deg;  animation-delay:0.5s">home</span>
-         <span class="material-symbols-rounded" style="top:8%;  left:40%; --r:-8deg;  animation-delay:1.3s">shield</span>
-         <span class="material-symbols-rounded" style="top:13%; left:88%; --r:-10deg; animation-delay:1s">sensor_door</span>
-         <span class="material-symbols-rounded" style="top:18%; left:3%;  --r:25deg;  animation-delay:1.5s">security</span>
-         <span class="material-symbols-rounded" style="top:22%; left:55%; --r:15deg;  animation-delay:0.7s">key</span>
-         <span class="material-symbols-rounded" style="top:28%; left:80%; --r:-20deg; animation-delay:0.8s">lock_open</span>
-         <span class="material-symbols-rounded" style="top:33%; left:20%; --r:10deg;  animation-delay:2s">verified_user</span>
-         <span class="material-symbols-rounded" style="top:40%; left:68%; --r:-12deg; animation-delay:1.6s">camera_indoor</span>
-         <span class="material-symbols-rounded" style="top:46%; left:12%; --r:10deg;  animation-delay:2s">notifications</span>
-         <span class="material-symbols-rounded" style="top:52%; left:88%; --r:22deg;  animation-delay:0.4s">doorbell</span>
-         <span class="material-symbols-rounded" style="top:58%; left:35%; --r:-15deg; animation-delay:1.9s">home_work</span>
-         <span class="material-symbols-rounded" style="top:60%; left:65%; --r:-25deg; animation-delay:0.3s">lock</span>
-         <span class="material-symbols-rounded" style="top:68%; left:5%;  --r:18deg;  animation-delay:1.1s">shield</span>
-         <span class="material-symbols-rounded" style="top:73%; left:78%; --r:-8deg;  animation-delay:1.8s">key</span>
-         <span class="material-symbols-rounded" style="top:76%; left:30%; --r:15deg;  animation-delay:1.2s">home</span>
-         <span class="material-symbols-rounded" style="top:80%; left:55%; --r:-22deg; animation-delay:0.9s">security</span>
-         <span class="material-symbols-rounded" style="top:83%; left:85%; --r:12deg;  animation-delay:1.7s">sensor_door</span>
-         <span class="material-symbols-rounded" style="top:86%; left:8%;  --r:30deg;  animation-delay:0.6s">verified_user</span>
-         <span class="material-symbols-rounded" style="top:89%; left:45%; --r:-18deg; animation-delay:2.2s">doorbell</span>
-         <span class="material-symbols-rounded" style="top:92%; left:72%; --r:14deg;  animation-delay:1.4s">camera_indoor</span>
-         <span class="material-symbols-rounded" style="top:95%; left:20%; --r:-20deg; animation-delay:1.1s">notifications</span>
+      <div class="home-bg">  
+         <span class="material-symbols-rounded" style="top:5%;  left:72%; --r:20deg;  animation-delay:0.5s">home</span>  
+         <span class="material-symbols-rounded" style="top:8%;  left:40%; --r:-8deg;  animation-delay:1.3s">shield</span>  
+         <span class="material-symbols-rounded" style="top:13%; left:88%; --r:-10deg; animation-delay:1s">sensor_door</span>  
+         <span class="material-symbols-rounded" style="top:18%; left:3%;  --r:25deg;  animation-delay:1.5s">security</span>  
+         <span class="material-symbols-rounded" style="top:22%; left:55%; --r:15deg;  animation-delay:0.7s">key</span>  
+         <span class="material-symbols-rounded" style="top:28%; left:80%; --r:-20deg; animation-delay:0.8s">lock_open</span>  
+         <span class="material-symbols-rounded" style="top:33%; left:20%; --r:10deg;  animation-delay:2s">verified_user</span>  
+         <span class="material-symbols-rounded" style="top:40%; left:68%; --r:-12deg; animation-delay:1.6s">camera_indoor</span>  
+         <span class="material-symbols-rounded" style="top:46%; left:12%; --r:10deg;  animation-delay:2s">notifications</span>  
+         <span class="material-symbols-rounded" style="top:52%; left:88%; --r:22deg;  animation-delay:0.4s">doorbell</span>  
+         <span class="material-symbols-rounded" style="top:58%; left:35%; --r:-15deg; animation-delay:1.9s">home_work</span>  
+         <span class="material-symbols-rounded" style="top:60%; left:65%; --r:-25deg; animation-delay:0.3s">lock</span>  
+         <span class="material-symbols-rounded" style="top:68%; left:5%;  --r:18deg;  animation-delay:1.1s">shield</span>  
+         <span class="material-symbols-rounded" style="top:73%; left:78%; --r:-8deg;  animation-delay:1.8s">key</span>  
+         <span class="material-symbols-rounded" style="top:76%; left:30%; --r:15deg;  animation-delay:1.2s">home</span>  
+         <span class="material-symbols-rounded" style="top:80%; left:55%; --r:-22deg; animation-delay:0.9s">security</span>  
+         <span class="material-symbols-rounded" style="top:83%; left:85%; --r:12deg;  animation-delay:1.7s">sensor_door</span>  
+         <span class="material-symbols-rounded" style="top:86%; left:8%;  --r:30deg;  animation-delay:0.6s">verified_user</span>  
+         <span class="material-symbols-rounded" style="top:89%; left:45%; --r:-18deg; animation-delay:2.2s">doorbell</span>  
+         <span class="material-symbols-rounded" style="top:92%; left:72%; --r:14deg;  animation-delay:1.4s">camera_indoor</span>  
+         <span class="material-symbols-rounded" style="top:95%; left:20%; --r:-20deg; animation-delay:1.1s">notifications</span>  
       </div>
       <main class="page active" id="home">
          <h1>DormGuard</h1>
@@ -63,41 +55,41 @@
             <div class="cards-grid">
                <div class="card" id="card-last-opened">
                   <div class="label">Last Opened At</div>
-                  <div id="LastOpened" class="value">
-                     <span id="lastOpenedHour">--</span>
-                     <span id="lastOpenedMin">--</span>
+                  <div id="LastOpened" class="value">  
+                     <span id="lastOpenedHour">--</span>  
+                     <span id="lastOpenedMin">--</span>  
                   </div>
-                  <span id="lastOpenedDate"></span>
+                  <span id="lastOpenedDate"></span>  
                </div>
                <div class="cards-right">
                   <div class="card">
                      <div class="label">Door Status</div>
                      <div class="value-row">
                         <div id="doorStatus" class="value">-</div>
-                        <span class="material-symbols-rounded card-icon">door_front</span>
+                        <span class="material-symbols-rounded card-icon">door_front</span>  
                      </div>
                   </div>
                   <div class="card">
                      <div class="label">Time</div>
                      <div class="value-row">
                         <div id="currentTime" class="value">--:--:--</div>
-                        <span class="material-symbols-rounded card-icon">schedule</span>
+                        <span class="material-symbols-rounded card-icon">schedule</span>  
                      </div>
                   </div>
                </div>
             </div>
             <div class="controls">
-               <button class="md-btn setup-btn" id="openSetupBtn">
-               <span class="material-symbols-rounded">dashboard_customize</span>
-               Setup DormGuard
-               </button>
+               <button class="md-btn setup-btn" id="openSetupBtn">  
+               <span class="material-symbols-rounded">dashboard_customize</span>  
+               Setup DormGuard  
+               </button>  
                <div class="settings-section">
                   <div class="settings-left">
-                     <div class="label">
-                        <span class="material-symbols-rounded">alarm</span>
-                        Alert Control
+                     <div class="label">  
+                        <span class="material-symbols-rounded">alarm</span>  
+                        Alert Control  
                      </div>
-                     <button id="alertToggle" class="md-btn">No Alert</button>
+                     <button id="alertToggle" class="md-btn">No Alert</button>  
                   </div>
                   <div class="pixel-screen" id="screen"></div>
                </div>
@@ -105,24 +97,24 @@
          </div>
       </main>
       <main class="page" id="logs">
-         <h1>
-            Logs
-            <button id="viewdat" class="sheets-btn" title="View on Sheets">
-            <span class="material-symbols-rounded">note</span>
-            </button>
+         <h1>  
+            Logs  
+            <button id="viewdat" class="sheets-btn" title="View on Sheets">  
+            <span class="material-symbols-rounded">note</span>  
+            </button>  
          </h1>
          <div class="page-content">
             <div class="logs-wrapper">
                <ul id="eventList" class="md-list"></ul>
             </div>
             <div class="database">
-               <div class="label">
-                  <span class="material-symbols-rounded">download</span>
-                  Download Database
+               <div class="label">  
+                  <span class="material-symbols-rounded">download</span>  
+                  Download Database  
                </div>
-               <div class="db-actions">
-                  <button class="md-btn" id="fulldat">Full Records</button>
-                  <button class="md-btn" id="latestdat">Latest</button>
+               <div class="db-actions">  
+                  <button class="md-btn" id="fulldat">Full Records</button>  
+                  <button class="md-btn" id="latestdat">Latest</button>  
                </div>
             </div>
          </div>
@@ -132,93 +124,112 @@
          <div class="page-content">
             <div class="settings-list">
                <div class="settings-header">DormGuard Device</div>
-               <div class="settings-item">
-                  <span class="material-symbols-rounded">lightbulb</span>
-                  <span class="setting-text">LED Blink</span>
-                  <label class="md-switch">
-                  <input type="checkbox" id="ledSwitch">
-                  <span></span>
-                  </label>
+               <div class="settings-item">  
+                  <span class="material-symbols-rounded">lightbulb</span>  
+                  <span class="setting-text">LED Blink</span>  
+                  <label class="md-switch">  
+                  <input type="checkbox" id="ledSwitch">  
+                  <span></span>  
+                  </label>  
                </div>
-               <div class="settings-item">
-                  <span class="material-symbols-rounded">volume_up</span>
-                  <span class="setting-text">Buzzer</span>
-                  <label class="md-switch">
-                  <input type="checkbox" id="buzzerSwitch">
-                  <span></span>
-                  </label>
+               <div class="settings-item">  
+                  <span class="material-symbols-rounded">volume_up</span>  
+                  <span class="setting-text">Buzzer</span>  
+                  <label class="md-switch">  
+                  <input type="checkbox" id="buzzerSwitch">  
+                  <span></span>  
+                  </label>  
                </div>
-               <div class="settings-item">
-                  <span class="material-symbols-rounded">wb_incandescent</span>
-                  <span class="setting-text">Lamp</span>
-                  <label class="md-switch">
-                  <input type="checkbox" id="lampSwitch">
-                  <span></span>
-                  </label>
+               <div class="settings-item">  
+                  <span class="material-symbols-rounded">wb_incandescent</span>  
+                  <span class="setting-text">Lamp</span>  
+                  <label class="md-switch">  
+                  <input type="checkbox" id="lampSwitch">  
+                  <span></span>  
+                  </label>  
                </div>
                <div class="settings-header">App</div>
-               <div class="settings-item">
-                  <span class="material-symbols-rounded">dark_mode</span>
-                  <span class="setting-text">Dark Mode</span>
-                  <label class="md-switch">
-                  <input type="checkbox" id="darkModeSwitch">
-                  <span></span>
-                  </label>
+               <div class="settings-item">  
+                  <span class="material-symbols-rounded">dark_mode</span>  
+                  <span class="setting-text">Dark Mode</span>  
+                  <label class="md-switch">  
+                  <input type="checkbox" id="darkModeSwitch">  
+                  <span></span>  
+                  </label>  
                </div>
-               <div class="settings-item">
-                  <span class="material-symbols-rounded">notifications</span>
-                  <span class="setting-text">Notification</span>
-                  <label class="md-switch">
-                  <input type="checkbox" id="notificationsSwitch">
-                  <span></span>
-                  </label>
+               <div class="settings-item">  
+                  <span class="material-symbols-rounded">notifications</span>  
+                  <span class="setting-text">Notification</span>  
+                  <label class="md-switch">  
+                  <input type="checkbox" id="notificationsSwitch">  
+                  <span></span>  
+                  </label>  
                </div>
-               <div class="settings-item">
-                  <span class="material-symbols-rounded">warning</span>
-                  <span class="setting-text">Alert</span>
-                  <label class="md-switch">
-                  <input type="checkbox" id="alertSwitch">
-                  <span></span>
-                  </label>
+               <div class="settings-item">  
+                  <span class="material-symbols-rounded">warning</span>  
+                  <span class="setting-text">Alert</span>  
+                  <label class="md-switch">  
+                  <input type="checkbox" id="alertSwitch">  
+                  <span></span>  
+                  </label>  
+               </div>
+               <div class="settings-item poll-rate-item">
+                  <div class="poll-rate-header">  
+                     <span class="material-symbols-rounded">speed</span>  
+                     <span class="setting-text">Polling Speed</span>  
+                  </div>
+                  <div class="poll-rate-control">
+                     <input type="range" id="pollRateSlider" class="md-slider" min="0" max="3" step="1" value="1">  
+                     <div class="poll-rate-labels">  
+                        <span data-val="0">Low</span>  
+                        <span data-val="1">Medium</span>  
+                        <span data-val="2">High</span>  
+                        <span data-val="3">Smart</span>  
+                     </div>
+                     <div class="poll-rate-desc">  
+                        <span class="material-symbols-rounded">info</span>  
+                        <span id="pollRateDesc">Checks for updates every 8 seconds.</span>  
+                     </div>
+                  </div>
                </div>
                <div class="settings-header">Accessibility</div>
-               <div class="settings-item">
-                  <span class="material-symbols-rounded">motion_photos_off</span>
-                  <span class="setting-text">Disable Animation</span>
-                  <label class="md-switch">
-                  <input type="checkbox" id="reduceMotionSwitch">
-                  <span></span>
-                  </label>
+               <div class="settings-item">  
+                  <span class="material-symbols-rounded">motion_photos_off</span>  
+                  <span class="setting-text">Disable Animation</span>  
+                  <label class="md-switch">  
+                  <input type="checkbox" id="reduceMotionSwitch">  
+                  <span></span>  
+                  </label>  
                </div>
-               <div class="settings-item">
-                  <span class="material-symbols-rounded">contrast</span>
-                  <span class="setting-text">High Contrast</span>
-                  <label class="md-switch">
-                  <input type="checkbox" id="contrastSwitch">
-                  <span></span>
-                  </label>
+               <div class="settings-item">  
+                  <span class="material-symbols-rounded">contrast</span>  
+                  <span class="setting-text">High Contrast</span>  
+                  <label class="md-switch">  
+                  <input type="checkbox" id="contrastSwitch">  
+                  <span></span>  
+                  </label>  
                </div>
-               <div class="settings-item">
-                  <span class="material-symbols-rounded">vibration</span>
-                  <span class="setting-text">Disable Haptic</span>
-                  <label class="md-switch">
-                  <input type="checkbox" id="vibrationSwitch">
-                  <span></span>
-                  </label>
+               <div class="settings-item">  
+                  <span class="material-symbols-rounded">vibration</span>  
+                  <span class="setting-text">Disable Haptic</span>  
+                  <label class="md-switch">  
+                  <input type="checkbox" id="vibrationSwitch">  
+                  <span></span>  
+                  </label>  
                </div>
                <div class="settings-header" id="configSection">DormGuard Config</div>
                <div class="settings-item collapsible" data-target="apiConfig">
-                  <span class="material-symbols-rounded">terminal</span>
-                  <span class="setting-text">Google Sheet API</span>
-                  <div class="expand-icon">
-                     <span class="material-symbols-rounded">expand_more</span>
+                  <span class="material-symbols-rounded">terminal</span>  
+                  <span class="setting-text">Google Sheet API</span>  
+                  <div class="expand-icon">  
+                     <span class="material-symbols-rounded">expand_more</span>  
                   </div>
                </div>
                <div class="collapsible-content" id="apiConfig" data-target="userConfig">
                   <div class="user-config">
                      <div class="user-input">
-                        <div class="sheets-input-container">
-                           <span class="material-symbols-rounded sheets-icon">assignment</span>
+                        <div class="sheets-input-container">  
+                           <span class="material-symbols-rounded sheets-icon">assignment</span>  
                         </div>
                      </div>
                      <div class="stp-wrap">
@@ -227,31 +238,31 @@
                               <div class="stp-alone">
                                  <div class="stp-card">
                                     <div class="stp-cnt">
-                                       <span class="material-symbols-rounded">door_front</span>
-                                       <div class="stp-info">
-                                          <span class="stp-lbl">Door Logs API</span>
-                                          <span class="stp-sts">API for door open/close logs</span>
+                                       <span class="material-symbols-rounded">door_front</span>  
+                                       <div class="stp-info">  
+                                          <span class="stp-lbl">Door Logs API</span>  
+                                          <span class="stp-sts">API for door open/close logs</span>  
                                        </div>
                                     </div>
                                  </div>
                               </div>
-                              <br/>
+                              <br/>  
                               <div class="stp-grid">
                                  <div class="stp-card">
                                     <div class="stp-cnt">
-                                       <span class="material-symbols-rounded">note</span>
-                                       <div class="stp-info">
-                                          <span class="stp-lbl">Sheets</span>
-                                          <span class="stp-sts">Your Sheets link</span>
+                                       <span class="material-symbols-rounded">note</span>  
+                                       <div class="stp-info">  
+                                          <span class="stp-lbl">Sheets</span>  
+                                          <span class="stp-sts">Your Sheets link</span>  
                                        </div>
                                     </div>
                                  </div>
                                  <div class="stp-card">
                                     <div class="stp-cnt">
-                                       <span class="material-symbols-rounded">nearby</span>
-                                       <div class="stp-info">
-                                          <span class="stp-lbl">Ctrls API</span>
-                                          <span class="stp-sts">Device controls</span>
+                                       <span class="material-symbols-rounded">nearby</span>  
+                                       <div class="stp-info">  
+                                          <span class="stp-lbl">Ctrls API</span>  
+                                          <span class="stp-sts">Device controls</span>  
                                        </div>
                                     </div>
                                  </div>
@@ -261,21 +272,21 @@
                               <div class="stp-alone">
                                  <div class="stp-card">
                                     <div class="stp-cnt">
-                                       <span class="material-symbols-rounded">door_front</span>
-                                       <div class="stp-info">
-                                          <span class="stp-lbl">Door Logs API</span>
-                                          <span class="stp-sts">API for door open/close logs</span>
+                                       <span class="material-symbols-rounded">door_front</span>  
+                                       <div class="stp-info">  
+                                          <span class="stp-lbl">Door Logs API</span>  
+                                          <span class="stp-sts">API for door open/close logs</span>  
                                        </div>
                                     </div>
                                  </div>
                               </div>
-                              <br/>
+                              <br/>  
                               <div class="stp-input">
                                  <textarea id="doorApiInput" class="md-input" placeholder='Paste your Door Logs API here (Most important for this thing work)'></textarea>
                                  <div class="stp-next">
                                     <div class="stp-card">
-                                       <div class="stp-cnt">
-                                          <span class="material-symbols-rounded">arrow_forward</span>
+                                       <div class="stp-cnt">  
+                                          <span class="material-symbols-rounded">arrow_forward</span>  
                                        </div>
                                     </div>
                                  </div>
@@ -285,21 +296,21 @@
                               <div class="stp-alone">
                                  <div class="stp-card">
                                     <div class="stp-cnt">
-                                       <span class="material-symbols-rounded">note</span>
-                                       <div class="stp-info">
-                                          <span class="stp-lbl">Sheets</span>
-                                          <span class="stp-sts">Your Sheets link</span>
+                                       <span class="material-symbols-rounded">note</span>  
+                                       <div class="stp-info">  
+                                          <span class="stp-lbl">Sheets</span>  
+                                          <span class="stp-sts">Your Sheets link</span>  
                                        </div>
                                     </div>
                                  </div>
                               </div>
-                              <br/>
+                              <br/>  
                               <div class="stp-input">
                                  <textarea class="md-input2" type="text" placeholder="And your sheets link (Optional but recommended)"></textarea>
                                  <div class="stp-next">
                                     <div class="stp-card">
-                                       <div class="stp-cnt">
-                                          <span class="material-symbols-rounded">arrow_forward</span>
+                                       <div class="stp-cnt">  
+                                          <span class="material-symbols-rounded">arrow_forward</span>  
                                        </div>
                                     </div>
                                  </div>
@@ -309,45 +320,45 @@
                               <div class="stp-alone">
                                  <div class="stp-card">
                                     <div class="stp-cnt">
-                                       <span class="material-symbols-rounded">nearby</span>
-                                       <div class="stp-info">
-                                          <span class="stp-lbl">Controls API</span>
-                                          <span class="stp-sts">Device Controls</span>
+                                       <span class="material-symbols-rounded">nearby</span>  
+                                       <div class="stp-info">  
+                                          <span class="stp-lbl">Controls API</span>  
+                                          <span class="stp-sts">Device Controls</span>  
                                        </div>
                                     </div>
                                  </div>
                               </div>
-                              <br/>
+                              <br/>  
                               <div class="stp-input">
                                  <textarea id="ctrlsApiInput" class="md-input" type="text" placeholder="Needed to enable/disable stuffs on DormGuard device"></textarea>
                                  <div class="stp-next">
                                     <div class="stp-card">
-                                       <div class="stp-cnt">
-                                          <span class="material-symbols-rounded">restart_alt</span>
+                                       <div class="stp-cnt">  
+                                          <span class="material-symbols-rounded">restart_alt</span>  
                                        </div>
                                     </div>
                                  </div>
                               </div>
                            </div>
                         </div>
-                        <div class="stp-dots">
-                           <span class="stp-dot active"></span>
-                           <span class="stp-dot"></span>
-                           <span class="stp-dot"></span>
-                           <span class="stp-dot"></span>
+                        <div class="stp-dots">  
+                           <span class="stp-dot active"></span>  
+                           <span class="stp-dot"></span>  
+                           <span class="stp-dot"></span>  
+                           <span class="stp-dot"></span>  
                         </div>
                      </div>
-                     <div class="user-input">
-                        <button id="saveConfig" class="md-btn">Save</button>
-                        <button id="resetConfig" class="md-btn">Reset</button>
+                     <div class="user-input">  
+                        <button id="saveConfig" class="md-btn">Save</button>  
+                        <button id="resetConfig" class="md-btn">Reset</button>  
                      </div>
                   </div>
                </div>
                <div class="settings-item collapsible" data-target="apiTutorial">
-                  <span class="material-symbols-rounded">info</span>
-                  <span class="setting-text">How to get web app API?</span>
-                  <div class="expand-icon">
-                     <span class="material-symbols-rounded">expand_more</span>
+                  <span class="material-symbols-rounded">info</span>  
+                  <span class="setting-text">How to get web app API?</span>  
+                  <div class="expand-icon">  
+                     <span class="material-symbols-rounded">expand_more</span>  
                   </div>
                </div>
                <div class="collapsible-content" id="apiTutorial">
@@ -357,51 +368,49 @@
                            <div class="tutorial">
                               <h3><span class="step-number">Step 1</span> Prepare the Script</h3>
                               <p>In the menu, go to <strong>Extensions → Apps Script</strong>. Delete any existing code, then paste this:</p>
-                              <button class="tut-code-toggle md-btn" id="toggleApiCode">
-                              <span class="material-symbols-rounded">code</span>
-                              Show Code
-                              </button>
+                              <button class="tut-code-toggle md-btn" id="toggleApiCode">  
+                              <span class="material-symbols-rounded">code</span>  
+                              Show Code  
+                              </button>  
                               <div class="code-container" id="apiCodeContainer" style="display:none;">
                                  <div class="tools">
                                     <div class="circle"><span class="red box"></span></div>
                                     <div class="circle"><span class="yellow box"></span></div>
                                     <div class="circle"><span class="green box"></span></div>
                                  </div>
-                                 <button id="copyApiCode" class="copy-btn" title="Copy Code">
-                                 <span class="material-symbols-rounded">content_copy</span>
-                                 </button>
+                                 <button id="copyApiCode" class="copy-btn" title="Copy Code">  
+                                 <span class="material-symbols-rounded">content_copy</span>  
+                                 </button>  
                                  <div class="card__content">
-                                    <pre>
-function doGet(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet1");
-  const data = sheet.getDataRange().getValues();
+                                    <pre>  
+function doGet(e) {  
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet1");  
+  const data = sheet.getDataRange().getValues();  const rows = data.map(row => ({
+time: row[0],
+date: row[1],
+door: row[2]
+}));
 
-  const rows = data.map(row => ({
-    time: row[0],
-    date: row[1],
-    door: row[2]
-  }));
-
-  return ContentService
-    .createTextOutput(JSON.stringify(rows))
-    .setMimeType(ContentService.MimeType.JSON);
+return ContentService
+.createTextOutput(JSON.stringify(rows))
+.setMimeType(ContentService.MimeType.JSON);
 }
 
 function doPost(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet1");
-  const params = JSON.parse(e.postData.contents);
+const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet1");
+const params = JSON.parse(e.postData.contents);
 
-  sheet.appendRow([
-    params.time || new Date().toISOString(),
-    params.date || new Date().toLocaleDateString(),
-    params.door || "UNKNOWN"
-  ]);
+sheet.appendRow([
+params.time || new Date().toISOString(),
+params.date || new Date().toLocaleDateString(),
+params.door || "UNKNOWN"
+]);
 
-  return ContentService
-    .createTextOutput(JSON.stringify({ status: "ok" }))
-    .setMimeType(ContentService.MimeType.JSON);
+return ContentService
+.createTextOutput(JSON.stringify({ status: "ok" }))
+.setMimeType(ContentService.MimeType.JSON);
 }
-                                    </pre>
+</pre>
                                  </div>
                               </div>
                            </div>
@@ -466,13 +475,13 @@ function doPost(e) {
          </h1>
          <div class="page-content">
             <div class="info">
-               <img src="icon.png" alt="Icon" />
+               <img src="icon.png" alt="Icon" id="dormguard" />
                <div class="info-text">
                   <div>Dorm Guard</div>
                   <div class="ver">v1.2.0 (120)</div>
                </div>
             </div>
-            <div class="wavy-divider">_______________________________</div>
+            <div class="wavy-divider"></div>
             <div class="about-card">
                <div class="about-profile">
                   <img src="https://avatars.githubusercontent.com/rynekryz" class="about-avatar" alt="Avatar" />
@@ -502,7 +511,7 @@ function doPost(e) {
                <span class="material-symbols-rounded">local_cafe</span>Buy me a coffee!
                </a>
             </div>
-            <div class="wavy-divider">_______________________________</div>
+            <div class="wavy-divider"></div>
             <div class="another-info">
                <div id="creditsBox">
                   <div id="creditsTitle">Credits <span class="material-symbols-rounded">book_2</span></div>
@@ -552,6 +561,15 @@ function doPost(e) {
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
                      <div class="credits-divider"></div>
+                     <div class="credits-item" onclick="window.open('https://uiverse.io/20essentials/dry-mayfly-12', '_blank')">
+                        <span class="material-symbols-rounded">videogame_asset</span>
+                        <div class="credits-info">
+                           <span class="credits-name">Dino on loading screen</span>
+                           <span class="credits-sub">by 20essentials | uiverse.io</span>
+                        </div>
+                        <span class="material-symbols-rounded credits-link">open_in_new</span>
+                     </div>
+                     <div class="credits-divider"></div>
                      <div class="credits-item" onclick="window.open('https://nodejs.org', '_blank')">
                         <span class="material-symbols-rounded">terminal</span>
                         <div class="credits-info">
@@ -591,128 +609,129 @@ function doPost(e) {
          const toggleCodeBtn = document.getElementById('toggleApiCode');
          let codeVisible = false;
          
-         toggleCodeBtn.addEventListener('click', () => {
-           if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
-           codeVisible = !codeVisible;
-           if (codeVisible) {
-             const overlay = document.createElement('div');
-             overlay.className = 'md-dialog-overlay';
-             overlay.innerHTML = `
-               <div class="md-dialog" style="width:min(500px,92vw);max-height:80vh;overflow-y:auto;padding:16px;">
-                 <div style="width:100%;margin-bottom:12px;">
-                   <span style="font-weight:600;font-size:var(--fs-l);">Apps Script Code</span>
-                 </div>
-                 <div class="code-container" style="margin:0;">
-                   <div class="tools">
-                     <div class="circle"><span class="red box"></span></div>
-                     <div class="circle"><span class="yellow box"></span></div>
-                     <div class="circle"><span class="green box"></span></div>
-                   </div>
-                   <button id="copyApiCodeDialog" class="copy-btn" title="Copy Code">
-                     <span class="material-symbols-rounded">content_copy</span>
-                   </button>
-                   <div class="card__content">
-                     <pre>${codeContainer.querySelector('pre').innerText}</pre>
-                   </div>
-                 </div>
-                 <div style="display:flex;justify-content:center;margin-top:16px;">
-                   <button id="closeCodeDialog" class="md-btn" style="padding:12px 32px;border-radius:50px !important;display:flex;align-items:center;justify-content:center;gap:8px;font-size:var(--fs-md);font-weight:600;">
-                     <span class="material-symbols-rounded" style="font-size:1.1rem;font-variation-settings:'wght' 700;">close</span>
-                     Close
-                   </button>
-                 </div>
-               </div>
-             `;
-             document.body.appendChild(overlay);
-             requestAnimationFrame(() => {
-               requestAnimationFrame(() => overlay.classList.add('show'));
-             });
-         
-             const closeDialog = () => {
-               overlay.classList.remove('show');
-               overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
-               codeVisible = false;
-               toggleCodeBtn.innerHTML = '<span class="material-symbols-rounded">code</span> Show Code';
-               if (navigator.vibrate) navigator.vibrate(30);
-             };
-         
-             overlay.querySelector('#closeCodeDialog').addEventListener('click', closeDialog);
-             overlay.addEventListener('click', (e) => { if (e.target === overlay) closeDialog(); });
-         
-             overlay.querySelector('#copyApiCodeDialog').addEventListener('click', () => {
-               if (navigator.vibrate) navigator.vibrate(64);
-               const code = codeContainer.querySelector('pre').innerText;
-               navigator.clipboard.writeText(code).then(() => {
-                 overlay.querySelector('#copyApiCodeDialog').innerHTML = '<span class="material-symbols-rounded">check</span>';
-                 setTimeout(() => {
-                   overlay.querySelector('#copyApiCodeDialog').innerHTML = '<span class="material-symbols-rounded">content_copy</span>';
-                 }, 1500);
-               }).catch(err => console.error('Copy failed', err));
-             });
-         
-             toggleCodeBtn.innerHTML = '<span class="material-symbols-rounded">code_off</span> Hide Code';
-           } else {
-             toggleCodeBtn.innerHTML = '<span class="material-symbols-rounded">code</span> Show Code';
-             codeVisible = false;
-           }
-         });
-         
-         copyBtn.addEventListener('click', () => {
-           if (navigator.vibrate) navigator.vibrate(64);
-           const code = codeContainer.querySelector('pre').innerText;
-           navigator.clipboard.writeText(code).then(() => {
-             copyBtn.innerHTML = '<span class="material-symbols-rounded">check</span>';
-             setTimeout(() => {
-               copyBtn.innerHTML = '<span class="material-symbols-rounded">content_copy</span>';
-             }, 1500);
-           }).catch(err => console.error('Copy failed', err));
-         });
-         
-         const tutPages = document.querySelector('.tut-pages');
-         const tutDots = document.querySelectorAll('.tut-dot');
-         const tutPrev = document.getElementById('tutPrev');
-         const tutNext = document.getElementById('tutNext');
-         const tutRestart = document.getElementById('tutRestart');
-         let tutIndex = 0;
-         const tutTotal = tutDots.length;
-         
-         function tutGoTo(index) {
-           tutIndex = Math.max(0, Math.min(index, tutTotal - 1));
-           tutPages.scrollTo({ left: tutPages.clientWidth * tutIndex, behavior: 'smooth' });
-           tutDots.forEach((d, i) => d.classList.toggle('active', i === tutIndex));
-           tutPrev.style.opacity = tutIndex === 0 ? '0.3' : '1';
-           tutNext.style.opacity = tutIndex === tutTotal - 1 ? '0.3' : '1';
-           tutRestart.style.opacity = tutIndex === 0 ? '0.3' : '1';
-           if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
-         }
-         
-         tutPrev.addEventListener('click', () => { if (tutIndex > 0) tutGoTo(tutIndex - 1); });
-         tutNext.addEventListener('click', () => { if (tutIndex < tutTotal - 1) tutGoTo(tutIndex + 1); });
-         tutRestart.addEventListener('click', () => { tutGoTo(0); });
-         
-         tutPages.addEventListener('scroll', () => {
-           const index = Math.round(tutPages.scrollLeft / tutPages.clientWidth);
-           if (index !== tutIndex) {
-             tutIndex = index;
-             tutDots.forEach((d, i) => d.classList.toggle('active', i === tutIndex));
-             tutPrev.style.opacity = tutIndex === 0 ? '0.3' : '1';
-             tutNext.style.opacity = tutIndex === tutTotal - 1 ? '0.3' : '1';
-             tutRestart.style.opacity = tutIndex === 0 ? '0.3' : '1';
-           }
-         });
-         
-         tutGoTo(0);
-         
-         document.querySelectorAll('.md-btn').forEach(btn => {
-           btn.addEventListener('click', (e) => {
-             e.stopPropagation();
-             if (navigator.vibrate) {
-               navigator.vibrate(64);
-             }
-           });
-         });
-      </script>
-      <script defer src="notifs.js"></script>
+         toggleCodeBtn.addEventListener('click', () => {  
+                if (navigator.vibrate) navigator.vibrate([30, 40, 30]);  
+                codeVisible = !codeVisible;  
+                if (codeVisible) {  
+                  const overlay = document.createElement('div');  
+                  overlay.className = 'md-dialog-overlay';  
+                  overlay.innerHTML = `  
+                    <div class="md-dialog" style="width:min(500px,92vw);max-height:80vh;overflow-y:auto;padding:16px;">  
+                      <div style="width:100%;margin-bottom:12px;">  
+                        <span style="font-weight:600;font-size:var(--fs-l);">Apps Script Code</span>  
+                      </div>  
+                      <div class="code-container" style="margin:0;">  
+                        <div class="tools">  
+                          <div class="circle"><span class="red box"></span></div>  
+                          <div class="circle"><span class="yellow box"></span></div>  
+                          <div class="circle"><span class="green box"></span></div>  
+                        </div>  
+                        <button id="copyApiCodeDialog" class="copy-btn" title="Copy Code">  
+                          <span class="material-symbols-rounded">content_copy</span>  
+                        </button>  
+                        <div class="card__content">  
+                          <pre>${codeContainer.querySelector('pre').innerText}</pre>  
+                        </div>  
+                      </div>  
+                      <div style="display:flex;justify-content:center;margin-top:16px;">  
+                        <button id="closeCodeDialog" class="md-btn" style="padding:12px 32px;border-radius:50px !important;display:flex;align-items:center;justify-content:center;gap:8px;font-size:var(--fs-md);font-weight:600;">  
+                          <span class="material-symbols-rounded" style="font-size:1.1rem;font-variation-settings:'wght' 700;">close</span>  
+                          Close  
+                        </button>  
+                      </div>  
+                    </div>  
+                  `;  
+                  document.body.appendChild(overlay);  
+                  requestAnimationFrame(() => {  
+                    requestAnimationFrame(() => overlay.classList.add('show'));  
+                  });  
+                
+                  const closeDialog = () => {  
+                    overlay.classList.remove('show');  
+                    overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });  
+                    codeVisible = false;  
+                    toggleCodeBtn.innerHTML = '<span class="material-symbols-rounded">code</span> Show Code';  
+                    if (navigator.vibrate) navigator.vibrate(30);  
+                  };  
+                
+                  overlay.querySelector('#closeCodeDialog').addEventListener('click', closeDialog);  
+                  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeDialog(); });  
+                
+                  overlay.querySelector('#copyApiCodeDialog').addEventListener('click', () => {  
+                    if (navigator.vibrate) navigator.vibrate(48);  
+                    const code = codeContainer.querySelector('pre').innerText;  
+                    navigator.clipboard.writeText(code).then(() => {  
+                      overlay.querySelector('#copyApiCodeDialog').innerHTML = '<span class="material-symbols-rounded">check</span>';  
+                      setTimeout(() => {  
+                        overlay.querySelector('#copyApiCodeDialog').innerHTML = '<span class="material-symbols-rounded">content_copy</span>';  
+                      }, 1500);  
+                    }).catch(err => console.error('Copy failed', err));  
+                  });  
+                
+                  toggleCodeBtn.innerHTML = '<span class="material-symbols-rounded">code_off</span> Hide Code';  
+                } else {  
+                  toggleCodeBtn.innerHTML = '<span class="material-symbols-rounded">code</span> Show Code';  
+                  codeVisible = false;  
+                }  
+              });  
+                
+              copyBtn.addEventListener('click', () => {  
+                if (navigator.vibrate) navigator.vibrate(48);  
+                const code = codeContainer.querySelector('pre').innerText;  
+                navigator.clipboard.writeText(code).then(() => {  
+                  copyBtn.innerHTML = '<span class="material-symbols-rounded">check</span>';  
+                  setTimeout(() => {  
+                    copyBtn.innerHTML = '<span class="material-symbols-rounded">content_copy</span>';  
+                  }, 1500);  
+                }).catch(err => console.error('Copy failed', err));  
+              });  
+                
+              const tutPages = document.querySelector('.tut-pages');  
+              const tutDots = document.querySelectorAll('.tut-dot');  
+              const tutPrev = document.getElementById('tutPrev');  
+              const tutNext = document.getElementById('tutNext');  
+              const tutRestart = document.getElementById('tutRestart');  
+              let tutIndex = 0;  
+              const tutTotal = tutDots.length;  
+                
+              function tutGoTo(index) {  
+                tutIndex = Math.max(0, Math.min(index, tutTotal - 1));  
+                tutPages.scrollTo({ left: tutPages.clientWidth * tutIndex, behavior: 'smooth' });  
+                tutDots.forEach((d, i) => d.classList.toggle('active', i === tutIndex));  
+                tutPrev.style.opacity = tutIndex === 0 ? '0.3' : '1';  
+                tutNext.style.opacity = tutIndex === tutTotal - 1 ? '0.3' : '1';  
+                tutRestart.style.opacity = tutIndex === 0 ? '0.3' : '1';  
+                if (navigator.vibrate) navigator.vibrate([30, 40, 30]);  
+              }  
+                
+              tutPrev.addEventListener('click', () => { if (tutIndex > 0) tutGoTo(tutIndex - 1); });  
+              tutNext.addEventListener('click', () => { if (tutIndex < tutTotal - 1) tutGoTo(tutIndex + 1); });  
+              tutRestart.addEventListener('click', () => { tutGoTo(0); });  
+                
+              tutPages.addEventListener('scroll', () => {  
+                const index = Math.round(tutPages.scrollLeft / tutPages.clientWidth);  
+                if (index !== tutIndex) {  
+                  tutIndex = index;  
+                  tutDots.forEach((d, i) => d.classList.toggle('active', i === tutIndex));  
+                  tutPrev.style.opacity = tutIndex === 0 ? '0.3' : '1';  
+                  tutNext.style.opacity = tutIndex === tutTotal - 1 ? '0.3' : '1';  
+                  tutRestart.style.opacity = tutIndex === 0 ? '0.3' : '1';  
+                }  
+              });  
+                
+              tutGoTo(0);  
+                
+              document.querySelectorAll('.md-btn').forEach(btn => {  
+                btn.addEventListener('click', (e) => {  
+                  e.stopPropagation();  
+                  if (navigator.vibrate) {  
+                    navigator.vibrate(48);  
+                  }  
+                });  
+              });  
+           
+      </script>  
+      <script defer src="notifs.js"></script>  
       <script defer src="ctrls.js"></script>
    </body>
 </html>
