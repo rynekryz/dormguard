@@ -335,7 +335,7 @@ EL.contrastSwitch.addEventListener('change', () => {
 });
 
 (function restoreSettings() {
-  const t = localStorage.getItem('theme') || 'light';
+  const t = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   applyTheme(t);
   EL.darkModeSwitch.checked = t === 'dark';
   if (localStorage.getItem('contrast') === 'on') {
