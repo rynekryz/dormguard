@@ -26,6 +26,7 @@ body {
    --fs-l: 1.125rem;
    --fs-md: 1rem;
    --fs-sm: .875rem;
+   --fs-ty: .75rem;
    --fs-icon: 1.8rem;
    --fs-clock: 6rem
 }
@@ -784,7 +785,8 @@ button {
 }
 
 .nav-item .nav-label {
-   transition: opacity .2s
+   transition: opacity .2s;
+   font-size: var(--fs-ty);
 }
 
 .nav-item.active {
@@ -1957,7 +1959,7 @@ button {
 .poll-rate-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: var(--fs-ty);
   opacity: 0.6;
   margin: 24px auto;
   padding: 0 2px;
@@ -1969,7 +1971,7 @@ button {
   align-items: flex-start;
   gap: 6px;
   margin-top: 12px;
-  font-size: 12px;
+  font-size: var(--fs-ty);
   opacity: 0.6;
   line-height: 1.4;
 }
