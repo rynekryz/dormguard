@@ -1,7 +1,3 @@
-const { StatusBar } = window.Capacitor?.Plugins || {};
-const { Filesystem, Share } = window.Capacitor?.Plugins || {};
-const IS_CAPACITOR = !!(window.Capacitor?.isNativePlatform?.());
-
 const getUrl = key => {
   const v = localStorage.getItem(key);
   if (!v) return '';
@@ -117,11 +113,11 @@ async function fetchServerData() {
   if (!navigator.onLine) {
     const cached = localStorage.getItem('cached_logs');
     if (cached && EL.eventList) EL.eventList.innerHTML = cached;
-    return;
+    return { changed: false };
   }
 
   const data = await fetchSheetData();
-  if (!data || data.unchanged) return;
+  if (!data || data.unchanged) return { changed: false };
 
   if (EL.doorStatus.textContent !== data.current.door)
     EL.doorStatus.textContent = data.current.door;
@@ -163,14 +159,61 @@ async function fetchServerData() {
     hourEl.textContent = '-';
     minEl.textContent  = '';
   }
+  return { changed: true };
 }
+
+const POLL_RATES = { 0: 10000, 1: 8000, 2: 5000, 3: null };
+let recentChanges = [];
+
+function isHomeActive() {
+  const homeEl = document.getElementById('home');
+  return !!homeEl && homeEl.classList.contains('active');
+}
+
+function canPoll() {
+  return !document.hidden && isHomeActive();
+}
+
+function getNextInterval(changed) {
+  if (pollMode !== 3) return POLL_RATES[pollMode];
+  recentChanges.push(changed);
+  if (recentChanges.length > 3) recentChanges.shift();
+  return recentChanges.filter(Boolean).length >= 2 ? 5000 : 10000;
+}
+
+const POLL_DESCS = {
+  0: 'Checks for updates every 10 seconds. Saves battery and data.',
+  1: 'Checks for updates every 8 seconds. Balanced for everyday use.',
+  2: 'Checks for updates every 5 seconds. Most responsive, uses more data.',
+  3: 'Adapts automatically. Speeds up when door activity is detected, slows down when idle.'
+};
+
+let pollMode = parseInt(localStorage.getItem('pollMode') ?? '1');
+
+function updateSliderFill(slider) {
+  const val = (slider.value - slider.min) / (slider.max - slider.min) * 100;
+  slider.style.setProperty('--fill', `${val}%`);
+  document.getElementById('pollRateDesc').textContent = POLL_DESCS[slider.value];
+}
+
+const pollSlider = document.getElementById('pollRateSlider');
+pollSlider.value = pollMode;
+pollSlider.addEventListener('input', () => {
+  pollMode = parseInt(pollSlider.value);
+  navigator.vibrate(24);
+  localStorage.setItem('pollMode', pollMode);
+  updateSliderFill(pollSlider);
+});
+updateSliderFill(pollSlider);
 
 function scheduleFetch() {
   clearTimeout(fetchTimer);
+  if (!canPoll()) return;
   fetchTimer = setTimeout(async () => {
-    await fetchServerData();
+    const result = await fetchServerData();
+    getNextInterval(result?.changed ?? false);
     scheduleFetch();
-  }, 5000);
+  }, POLL_RATES[pollMode] ?? 8000);
 }
 
 EL.viewDatBtn?.addEventListener('click', () => {
@@ -207,17 +250,11 @@ async function downloadCSV(filename, limit = null) {
     if (limit) rows = rows.slice(0, limit);
     const csv  = ['Time,Date,Door'].concat(rows.map(e => `${e.time},${e.date},${e.door}`)).join('\n');
 
-    if (IS_CAPACITOR && Filesystem) {
-      await Filesystem.writeFile({ path: filename, data: btoa(unescape(encodeURIComponent(csv))), directory: 'CACHE', encoding: 'BASE64' });
-      const { uri } = await Filesystem.getUri({ path: filename, directory: 'CACHE' });
-      await Share?.share({ title: filename, url: uri, dialogTitle: 'Save CSV' });
-    } else {
-      const a  = document.createElement('a');
-      a.href   = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    }
+    const a  = document.createElement('a');
+    a.href   = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
   } catch(e) {
      console.error(e);
   } finally {
@@ -239,6 +276,9 @@ EL.navBtns.forEach(btn => {
     EL.pages.forEach(p => p.classList.remove('active'));
     $(btn.dataset.page).classList.add('active');
     document.querySelector('.toast-emote')?.remove();
+    if (btn.dataset.page === 'home') scheduleFetch();
+    else clearTimeout(fetchTimer);
+    document.querySelectorAll('#settings .settings-item .material-symbols-rounded').forEach(i => i.classList.remove('shake'));
   });
 });
 
@@ -279,13 +319,6 @@ function applyContrast() {
 function updateThemeColor() {
   const bg = getComputedStyle(document.body).getPropertyValue('--md-sys-color-surface').trim();
   EL.themeMeta?.setAttribute('content', bg || 'rgb(252,248,248)');
-  if (StatusBar) {
-    const isDark = document.body.classList.contains('dark');
-    try {
-      StatusBar.setBackgroundColor({ color: isDark ? '#121212' : '#fcf8f8' });
-      StatusBar.setStyle({ style: isDark ? 'DARK' : 'LIGHT' });
-    } catch {}
-  }
 }
 
 EL.darkModeSwitch.addEventListener('change', () => {
@@ -315,12 +348,7 @@ EL.contrastSwitch.addEventListener('change', () => {
   }
 })();
 
-if (window.Capacitor) {
-  document.addEventListener('deviceready', updateThemeColor);
-  setTimeout(updateThemeColor, 500);
-} else {
-  updateThemeColor();
-}
+updateThemeColor();
 
 EL.reduceMotionSwitch.addEventListener('change', () => {
   document.body.classList.toggle('no-animation', EL.reduceMotionSwitch.checked);
@@ -594,7 +622,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof fetchServerData === 'function') {
     fetchServerData().then(scheduleFetch);
   }
-  navigator.serviceWorker?.register('/dormguard-app/sw.js');
+  navigator.serviceWorker?.register('/dormguard/sw.js');
   
   setTimeout(() => {
     const splash = EL.splash;
@@ -611,6 +639,33 @@ document.addEventListener('visibilitychange', () => {
     stopEmotes();
   } else {
     startEmotes();
-    fetchServerData().then(scheduleFetch);
+    if (canPoll()) fetchServerData().then(scheduleFetch);
   }
+});
+
+  const icon = document.getElementById("dormguard");
+
+  icon.addEventListener("click", () => {
+    icon.classList.remove("spin");
+    void icon.offsetWidth;
+    icon.classList.add("spin");
+  });
+  
+  document.querySelectorAll("#settings .settings-item").forEach(item => {
+  const checkbox = item.querySelector("input[type='checkbox']");
+  const icon = item.querySelector(".material-symbols-rounded");
+
+  if (!checkbox || !icon) return;
+
+  const triggerShake = () => {
+    icon.classList.remove("shake");
+    void icon.offsetWidth;
+    icon.classList.add("shake");
+  };
+
+  icon.addEventListener("animationend", () => {
+    icon.classList.remove("shake");
+  }, { once: false });
+
+  checkbox.addEventListener("change", triggerShake);
 });
