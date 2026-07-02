@@ -669,3 +669,12 @@ document.addEventListener('visibilitychange', () => {
 
   checkbox.addEventListener("change", triggerShake);
 });
+
+document.querySelector('.app-version').addEventListener('click', async () => {
+  const keys = await caches.keys();
+  await Promise.all(keys.map(k => caches.delete(k)));
+  navigator.serviceWorker?.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
+  });
+  location.reload(true);
+});
