@@ -9,6 +9,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const haptic = (pattern) => { if (navigator.vibrate) navigator.vibrate(pattern); };
 
+  const GAS_BASE = "https://script.google.com/macros/s/";
+  const GAS_SUFFIX = "/exec";
+
+  const isFullUrl = (val) => /^https?:\/\//i.test((val || "").trim());
+
+  const buildGasUrl = (idOrUrl) => {
+    const val = (idOrUrl || "").trim();
+    if (!val) return "";
+    if (isFullUrl(val)) return val.replace(/\/+$/, "");
+    return GAS_BASE + val.replace(/^\/+|\/+$/g, "") + GAS_SUFFIX;
+  };
+
+  const extractGasId = (url) => {
+    const match = (url || "").match(/\/macros\/s\/([^/]+)\/exec/i);
+    return match ? match[1] : (url || "");
+  };
+
+  const saveUrlSafely = (key, idOrUrl) => {
+    const fullUrl = buildGasUrl(idOrUrl);
+    if (!isFullUrl(fullUrl)) return false;
+    setUrl(key, fullUrl);
+    return true;
+  };
+
   if (stpPages && dots.length) {
     const totalPages = dots.length;
 
@@ -201,7 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (textarea.id === 'doorApiInput') {
       const saved = getUrl('api_url');
       if (saved) {
-        textarea.dataset.realValue = saved;
+        textarea.dataset.realValue = extractGasId(saved);
         textarea.value = '';
         textarea.setAttribute('placeholder', 'Edit?');
         textarea.classList.add('stp-has-value');
@@ -217,7 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (textarea.id === 'ctrlsApiInput') {
       const saved = getUrl('ctrls_url');
       if (saved) {
-        textarea.dataset.realValue = saved;
+        textarea.dataset.realValue = extractGasId(saved);
         textarea.value = '';
         textarea.setAttribute('placeholder', 'Edit?');
         textarea.classList.add('stp-has-value');
@@ -316,11 +340,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveConfigBtn  = document.getElementById("saveConfig");
   const resetConfigBtn = document.getElementById("resetConfig");
 
-  sheetsInput?.addEventListener("input", () => {
-    const url = sheetsInput.value.trim();
-    if (url) setUrl("sheets_url", url);
-  });
-
   function showResetConfirm(onConfirm) {
     const overlay = document.createElement("div");
     overlay.className = "md-dialog-overlay";
@@ -360,29 +379,55 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   saveConfigBtn?.addEventListener("click", () => {
-    const doorUrl = (doorApiInput?.dataset.realValue || doorApiInput?.value || "").trim();
-    if (doorUrl.startsWith("http")) {
-      window.API_KEY = doorUrl.replace(/\/$/, "");
-      setUrl("api_url", window.API_KEY);
+    const doorRaw = (doorApiInput?.dataset.realValue || doorApiInput?.value || "").trim();
+    const ctrlsRaw = (ctrlsApiInput?.dataset.realValue || ctrlsApiInput?.value || "").trim();
+    const sheetsRaw = (sheetsInput?.dataset.realValue || sheetsInput?.value || "").trim();
+
+    let savedAny = false;
+    let failedAny = false;
+
+    if (doorRaw) {
+      const doorUrl = buildGasUrl(doorRaw);
+      if (isFullUrl(doorUrl)) {
+        window.API_KEY = doorUrl;
+        setUrl("api_url", window.API_KEY);
+        savedAny = true;
+      } else {
+        failedAny = true;
+      }
     }
 
-    const sheetsUrl = (sheetsInput?.dataset.realValue || sheetsInput?.value || "").trim();
-    if (sheetsUrl.startsWith("http")) {
-      setUrl("sheets_url", sheetsUrl);
+    if (ctrlsRaw) {
+      if (saveUrlSafely("ctrls_url", ctrlsRaw)) {
+        savedAny = true;
+      } else {
+        failedAny = true;
+      }
     }
 
-    const ctrlsUrl = (ctrlsApiInput?.dataset.realValue || ctrlsApiInput?.value || "").trim();
-    if (ctrlsUrl.startsWith("http")) {
-      setUrl("ctrls_url", ctrlsUrl);
+    if (sheetsRaw) {
+      if (isFullUrl(sheetsRaw)) {
+        setUrl("sheets_url", sheetsRaw);
+        savedAny = true;
+      } else {
+        failedAny = true;
+      }
     }
 
     if (navigator.vibrate) navigator.vibrate(30);
-    showToast("check_circle", "Config saved");
+
+    if (failedAny) {
+      showToast("error", "Invalid ID/URL, not saved");
+    } else if (savedAny) {
+      showToast("check_circle", "Config saved");
+    } else {
+      showToast("info", "Nothing to save");
+    }
   });
 
   resetConfigBtn?.addEventListener("click", () => {
     showResetConfirm(() => {
-      [doorApiInput, sheetsInput, ctrlsApiInput].forEach(ta => {
+      [doorApiInput, ctrlsApiInput, sheetsInput].forEach(ta => {
         if (!ta) return;
         ta.value = "";
         delete ta.dataset.realValue;
