@@ -9,20 +9,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const ledSwitch       = document.getElementById('ledSwitch');
-  const buzzerSwitch    = document.getElementById('buzzerSwitch');
-  const vibrationSwitch = document.getElementById('vibrationSwitch');
-  const lampSwitch      = document.getElementById('lampSwitch');
-  const alertToggle     = document.getElementById('alertToggle');
-  const alertSwitch     = document.getElementById('alertSwitch');
-  const doorStatusEl    = document.getElementById('doorStatus');
+  const ledSwitch        = document.getElementById('ledSwitch');
+  const buzzerSwitch     = document.getElementById('buzzerSwitch');
+  const vibrationSwitch  = document.getElementById('vibrationSwitch');
+  const lampSwitch       = document.getElementById('lampSwitch');
+  const alertToggle      = document.getElementById('alertToggle');
+  const alertSwitch      = document.getElementById('alertSwitch');
+  const doorStatusEl     = document.getElementById('doorStatus');
+  const deviceCtrlSwitch = document.getElementById('deviceCtrlSwitch');
 
-  if (ledSwitch)       ledSwitch.checked      = localStorage.getItem('ledState')       === '1';
-  if (buzzerSwitch)    buzzerSwitch.checked    = localStorage.getItem('buzzerState')    === '1';
-  if (vibrationSwitch) vibrationSwitch.checked = localStorage.getItem('vibrationState') === '1';
-  if (lampSwitch)      lampSwitch.checked      = localStorage.getItem('lampState')      === '1';
+  if (ledSwitch)        ledSwitch.checked        = localStorage.getItem('ledState')       === '1';
+  if (buzzerSwitch)     buzzerSwitch.checked      = localStorage.getItem('buzzerState')    === '1';
+  if (vibrationSwitch)  vibrationSwitch.checked   = localStorage.getItem('vibrationState') === '1';
+  if (lampSwitch)       lampSwitch.checked        = localStorage.getItem('lampState')      === '1';
+  if (deviceCtrlSwitch) deviceCtrlSwitch.checked  = localStorage.getItem('deviceCtrl')     === '1';
+
+  function deviceControlsEnabled() {
+    if (!deviceCtrlSwitch) return true;
+    return deviceCtrlSwitch.checked;
+  }
 
   async function updateSheet(led = 0, buzzer = 0, stop = 0, lamp = 0, alert = null) {
+    if (!deviceControlsEnabled()) return;
     if (!sheetAPI) return;
     let url = `${sheetAPI}?led=${led}&buzzer=${buzzer}&stop=${stop}&lamp=${lamp}`;
     if (alert !== null) url += `&alert=${alert}`;
@@ -80,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (alertToggle) {
     alertToggle.addEventListener('click', () => {
+      if (!deviceControlsEnabled()) return;
       resetAlert();
       alertCooldown = true;
       setTimeout(() => { alertCooldown = false; }, 10000);
@@ -89,19 +98,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   let lastKnownDoor = '';
-  setInterval(() => {
-    if (!doorStatusEl) return;
-    const current = doorStatusEl.textContent;
-    if (current !== lastKnownDoor) {
-      lastKnownDoor = current;
-      if (current === 'CLOSED') {
-        resetAlert();
-        alertCooldown = false;
-      }
-    }
-  }, 300);
+  let doorPollTimer = null;
+  let alertPollTimer = null;
 
   async function syncEspAlert() {
+    if (!deviceControlsEnabled()) return;
     if (!sheetAPI) return;
     try {
       const res = await fetch(sheetAPI);
@@ -121,8 +122,46 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {}
   }
 
-  setInterval(syncEspAlert, 2000);
-  syncEspAlert();
+  function startPolling() {
+    if (doorPollTimer || alertPollTimer) return;
 
-  updateSheet(ledVal(), buzzerVal(), 0, lampVal(), 0);
+    doorPollTimer = setInterval(() => {
+      if (!doorStatusEl) return;
+      const current = doorStatusEl.textContent;
+      if (current !== lastKnownDoor) {
+        lastKnownDoor = current;
+        if (current === 'CLOSED') {
+          resetAlert();
+          alertCooldown = false;
+        }
+      }
+    }, 300);
+
+    syncEspAlert();
+    alertPollTimer = setInterval(syncEspAlert, 2000);
+  }
+
+  function stopPolling() {
+    if (doorPollTimer) clearInterval(doorPollTimer);
+    if (alertPollTimer) clearInterval(alertPollTimer);
+    doorPollTimer = null;
+    alertPollTimer = null;
+  }
+
+  if (deviceCtrlSwitch) {
+    deviceCtrlSwitch.addEventListener('change', () => {
+      localStorage.setItem('deviceCtrl', deviceCtrlSwitch.checked ? '1' : '0');
+      if (deviceCtrlSwitch.checked) {
+        startPolling();
+      } else {
+        stopPolling();
+        resetAlert();
+      }
+    });
+  }
+
+  if (deviceControlsEnabled()) {
+    startPolling();
+    updateSheet(ledVal(), buzzerVal(), 0, lampVal(), 0);
+  }
 });
