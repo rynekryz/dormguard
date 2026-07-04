@@ -1,0 +1,25 @@
+<resources>
+    <color name="ic_launcher_background">#000000</color>
+
+    <color name="light_primary">#585C60</color>
+    <color name="light_on_primary">#FFFFFF</color>
+    <color name="light_primary_container">#717579</color>
+    <color name="light_on_primary_container">#FCFCFF</color>
+    <color name="light_background">#FCF8F8</color>
+    <color name="light_on_background">#1C1B1C</color>
+    <color name="light_surface">#FCF8F8</color>
+    <color name="light_on_surface">#1C1B1C</color>
+    <color name="light_outline">#75777A</color>
+    <color name="light_surface_container">#F0EDED</color>
+
+    <color name="dark_primary">#C8C8C8</color>
+    <color name="dark_on_primary">#000000</color>
+    <color name="dark_primary_container">#3C3C3C</color>
+    <color name="dark_on_primary_container">#F0F0F0</color>
+    <color name="dark_background">#121212</color>
+    <color name="dark_on_background">#E6E6E6</color>
+    <color name="dark_surface">#121212</color>
+    <color name="dark_on_surface">#E6E6E6</color>
+    <color name="dark_outline">#5A5A5A</color>
+    <color name="dark_surface_container">#202020</color>
+</resources>

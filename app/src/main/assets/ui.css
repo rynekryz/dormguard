@@ -1,3 +1,42 @@
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 300 700;
+  src: url('fonts/Fredoka-VariableFont_wdth,wght.ttf') format('truetype-variations');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Google Sans Flex';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('fonts/GoogleSansFlex-VariableFont_GRAD,ROND,opsz,slnt,wdth,wght.ttf') format('truetype-variations');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Material Symbols Rounded';
+  font-style: normal;
+  font-weight: 100 700;
+  src: url('fonts/MaterialSymbolsRounded-VariableFont_FILL,GRAD,opsz,wght.ttf') format('truetype-variations');
+  font-display: block;
+}
+
+.material-symbols-rounded {
+  font-family: 'Material Symbols Rounded';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 200, 'opsz' 24;
+}
+
 html {
    font-size: 16px
 }
@@ -29,10 +68,6 @@ body {
    --fs-ty: .75rem;
    --fs-icon: 1.8rem;
    --fs-clock: 6rem
-}
-
-.material-symbols-rounded {
-   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 200, 'opsz' 24
 }
 
 .home-bg {
@@ -126,10 +161,14 @@ body {
    --md-sys-color-surface-container-high: rgb(36 36 36)
 }
 
-::selection,
+::selection {
+  background: var(--md-sys-color-primary) !important;
+  color: var(--md-sys-color-on-primary) !important;
+}
+
 ::-moz-selection {
-   background: var(--md-sys-color-primary);
-   color: var(--md-sys-color-on-primary)
+  background: var(--md-sys-color-primary) !important;
+  color: var(--md-sys-color-on-primary) !important;
 }
 
 @keyframes cardFadeUp {

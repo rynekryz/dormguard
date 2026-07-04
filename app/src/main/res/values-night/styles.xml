@@ -1,0 +1,28 @@
+<resources>
+    <style name="Theme.DormGuard" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:fitsSystemWindows">false</item>
+
+        <item name="colorPrimary">@color/dark_primary</item>
+        <item name="colorOnPrimary">@color/dark_on_primary</item>
+        <item name="colorPrimaryContainer">@color/dark_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/dark_on_primary_container</item>
+        <item name="colorSurface">@color/dark_surface</item>
+        <item name="colorOnSurface">@color/dark_on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/dark_on_surface</item>
+        <item name="colorOutline">@color/dark_outline</item>
+        <item name="android:colorBackground">@color/dark_background</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.DormGuard.MaterialAlertDialog</item>
+    </style>
+
+    <style name="ThemeOverlay.DormGuard.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorPrimary">@color/dark_primary</item>
+        <item name="colorSurface">@color/dark_surface_container</item>
+        <item name="colorOnSurface">@color/dark_on_surface</item>
+        <item name="colorOutline">@color/dark_outline</item>
+        <item name="colorSurfaceContainerHigh">@color/dark_surface_container</item>
+        <item name="elevationOverlayEnabled">false</item>
+    </style>
+</resources>

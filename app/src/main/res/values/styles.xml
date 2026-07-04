@@ -1,0 +1,28 @@
+<resources>
+    <style name="Theme.DormGuard" parent="Theme.Material3.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:fitsSystemWindows">false</item>
+
+        <item name="colorPrimary">@color/light_primary</item>
+        <item name="colorOnPrimary">@color/light_on_primary</item>
+        <item name="colorPrimaryContainer">@color/light_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/light_on_primary_container</item>
+        <item name="colorSurface">@color/light_surface</item>
+        <item name="colorOnSurface">@color/light_on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/light_on_surface</item>
+        <item name="colorOutline">@color/light_outline</item>
+        <item name="android:colorBackground">@color/light_background</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.DormGuard.MaterialAlertDialog</item>
+    </style>
+
+    <style name="ThemeOverlay.DormGuard.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorPrimary">@color/light_primary</item>
+        <item name="colorSurface">@color/light_surface_container</item>
+        <item name="colorOnSurface">@color/light_on_surface</item>
+        <item name="colorOutline">@color/light_outline</item>
+        <item name="colorSurfaceContainerHigh">@color/light_surface_container</item>
+        <item name="elevationOverlayEnabled">false</item>
+    </style>
+</resources>

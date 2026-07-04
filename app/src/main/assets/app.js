@@ -34,6 +34,12 @@ const _vibrate = navigator.vibrate?.bind(navigator);
 let vibrationEnabled = localStorage.getItem('vibration') !== 'off';
 navigator.vibrate = pattern => vibrationEnabled && _vibrate?.(pattern);
 
+const vibrateOnToggle = () => navigator.vibrate([22, 32, 24]);
+
+document.querySelectorAll('.md-switch input[type="checkbox"]').forEach(sw => {
+  sw.addEventListener('change', vibrateOnToggle);
+});
+
 if (EL.vibrationSwitch) {
   EL.vibrationSwitch.checked = !vibrationEnabled;
   EL.vibrationSwitch.addEventListener('change', () => {
@@ -250,11 +256,15 @@ async function downloadCSV(filename, limit = null) {
     if (limit) rows = rows.slice(0, limit);
     const csv  = ['Time,Date,Door'].concat(rows.map(e => `${e.time},${e.date},${e.door}`)).join('\n');
 
-    const a  = document.createElement('a');
-    a.href   = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+if (window.Android) {
+    window.Android.saveFileWithConfirm(filename, csv, 'text/csv', 'Confirm Download');
+} else {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     a.download = filename;
     a.click();
     URL.revokeObjectURL(a.href);
+}
   } catch(e) {
      console.error(e);
   } finally {
@@ -319,6 +329,12 @@ function applyContrast() {
 function updateThemeColor() {
   const bg = getComputedStyle(document.body).getPropertyValue('--md-sys-color-surface').trim();
   EL.themeMeta?.setAttribute('content', bg || 'rgb(252,248,248)');
+
+  if (window.Android) {
+    const isDark = getCurrentTheme() === 'dark';
+    window.Android.setStatusBarIconsLight(isDark);
+    window.Android.setAppTheme(isDark);
+  }
 }
 
 EL.darkModeSwitch.addEventListener('change', () => {
