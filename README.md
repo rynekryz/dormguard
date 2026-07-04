@@ -70,7 +70,7 @@ Licensed under GPL-3.0. See [LICENSE](LICENSE) for details.
 <div align="center">
 <strong>Made with ♥︎ by Ryne</strong>
 </div>
-
 <div align="center">
+  <a href="DISCORD_INVITE"><img src="https://img.shields.io/badge/Discord-5A5A5A?style=for-the-badge&logo=discord&logoColor=white"/></a>
   <a href="https://tiktok.com/@rynekryz"><img src="https://img.shields.io/badge/TikTok-5A5A5A?style=for-the-badge&logo=tiktok&logoColor=white"/></a>
 </div>
