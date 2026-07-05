@@ -85,7 +85,7 @@ async function fetchSheetData() {
   try {
     const res = await fetch(window.API_KEY);
     const raw = await res.json();
-    const rows = raw.values || raw || [];
+    const rows = Array.isArray(raw) ? raw : raw.values || [];
     
     const currentStr = JSON.stringify(rows);
     if (currentStr === lastRawDataString) {
@@ -94,17 +94,17 @@ async function fetchSheetData() {
     lastRawDataString = currentStr;
 
     const history = rows.slice(0).reverse().map(row => {
-      const rawTime = row.time || row[0];
-      const rawDate = row.date || row[1];
+      const timestamp = row.timestamp;
       return {
-        time: formatAMPM(rawTime),
-        date: formatDate(rawDate),
-        door: row.door || row[2] || 'UNKNOWN',
+        time: formatAMPM(new Date(timestamp)),
+        date: formatDate(new Date(timestamp)),
+        door: row.status || 'UNKNOWN',
       };
     });
+
     return {
-      unchanged:  false,
-      current:    history[0] || { door: 'UNKNOWN' },
+      unchanged: false,
+      current: history[0] || { door: 'UNKNOWN' },
       history,
       lastOpened: history.find(e => e.door === 'OPEN') || null,
     };
@@ -246,13 +246,12 @@ async function downloadCSV(filename, limit = null) {
   try {
     const res = await fetch(window.API_KEY);
     const raw = await res.json();
-    let rows = raw.values || raw || [];
+    let rows = Array.isArray(raw) ? raw : raw.values || [];
     rows = rows.slice(0).reverse().map(row => ({
-      time: formatAMPM(row.time || row[0]),
-      date: formatDate(row.date || row[1]),
-      door: row.door || row[2] || 'UNKNOWN'
+      time: formatAMPM(new Date(row.timestamp)),
+      date: formatDate(new Date(row.timestamp)),
+      door: row.status || 'UNKNOWN' 
     }));
-
     if (limit) rows = rows.slice(0, limit);
     const csv  = ['Time,Date,Door'].concat(rows.map(e => `${e.time},${e.date},${e.door}`)).join('\n');
 
@@ -349,6 +348,20 @@ EL.contrastSwitch.addEventListener('change', () => {
   localStorage.setItem('contrast', EL.contrastSwitch.checked ? 'on' : 'off');
   updateThemeColor();
 });
+
+const notifSwitch = document.getElementById('notificationsSwitch');
+let notifEnabled = localStorage.getItem('notifEnabled') === 'true';
+
+if (notifSwitch) {
+  notifSwitch.checked = notifEnabled;
+  notifSwitch.addEventListener('change', () => {
+    notifEnabled = notifSwitch.checked;
+    localStorage.setItem('notifEnabled', notifEnabled);
+    if (window.Android) {
+      window.Android.setNotificationsEnabled(notifEnabled);
+    }
+  });
+}
 
 (function restoreSettings() {
   const t = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -638,7 +651,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof fetchServerData === 'function') {
     fetchServerData().then(scheduleFetch);
   }
-  navigator.serviceWorker?.register('/dormguard/sw.js');
   
   setTimeout(() => {
     const splash = EL.splash;

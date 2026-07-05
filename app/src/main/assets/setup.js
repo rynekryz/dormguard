@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+ document.addEventListener("DOMContentLoaded", () => {
   const stpPages = document.querySelector(".stp-pages");
   const dots = document.querySelectorAll(".stp-dot");
 
@@ -420,6 +420,14 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("error", "Invalid ID/URL, not saved");
     } else if (savedAny) {
       showToast("check_circle", "Config saved");
+      setTimeout(() => {
+        if (window.Android) {
+          const doorUrl = getUrl("api_url");
+          if (doorUrl) {
+            window.Android.saveDoorLogsUrl(doorUrl);
+          }
+        }
+      }, 500);
     } else {
       showToast("info", "Nothing to save");
     }

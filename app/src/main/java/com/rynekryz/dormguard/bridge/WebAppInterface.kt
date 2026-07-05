@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContentValues
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -11,12 +12,19 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.provider.MediaStore
+import android.provider.Settings
 import android.view.View
 import android.webkit.JavascriptInterface
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.work.WorkManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.rynekryz.dormguard.notifications.DoorLogPollingWorker
+import com.rynekryz.dormguard.notifications.DoorLogService
 import org.json.JSONArray
+import java.util.concurrent.TimeUnit
 
 class WebAppInterface(private val context: Context) {
 
@@ -140,5 +148,78 @@ class WebAppInterface(private val context: Context) {
                 .setNegativeButton("Cancel", null)
                 .show()
         }
+    }
+
+    @JavascriptInterface
+    fun setNotificationsEnabled(enabled: Boolean) {
+        val sharedPrefs = context.getSharedPreferences("dormguard", Context.MODE_PRIVATE)
+        sharedPrefs.edit().putBoolean("notifications_enabled", enabled).apply()
+
+        if (enabled) {
+            val activity = context as? Activity ?: return
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(activity, android.Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED
+                ) {
+                    ActivityCompat.requestPermissions(
+                        activity,
+                        arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                        PERMISSION_REQUEST_CODE
+                    )
+                    return
+                }
+            }
+            showFrequencyDialog()
+        } else {
+            stopNotifications()
+        }
+    }
+
+    @JavascriptInterface
+    fun saveDoorLogsUrl(url: String) {
+        val sharedPrefs = context.getSharedPreferences("dormguard", Context.MODE_PRIVATE)
+        sharedPrefs.edit().putString("logs_url", url).apply()
+    }
+
+    fun showFrequencyDialog() {
+    val activity = context as? Activity ?: return
+    activity.runOnUiThread {
+        val options = arrayOf("1 minute", "3 minutes", "15 minutes")
+        val values = intArrayOf(1, 3, 15)
+
+        MaterialAlertDialogBuilder(activity)
+            .setTitle("Polling frequency")
+            .setSingleChoiceItems(options, 0) { dialog, which ->
+                val sharedPrefs = context.getSharedPreferences("dormguard", Context.MODE_PRIVATE)
+                sharedPrefs.edit().putInt("polling_interval", values[which]).apply()
+                startNotifications()
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                val sharedPrefs = context.getSharedPreferences("dormguard", Context.MODE_PRIVATE)
+                sharedPrefs.edit().putBoolean("notifications_enabled", false).apply()
+                dialog.dismiss()
+            }
+            .show()
+    }
+}
+
+    private fun startNotifications() {
+        val intent = Intent(context, DoorLogService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            @Suppress("DEPRECATION")
+            context.startService(intent)
+        }
+    }
+
+    private fun stopNotifications() {
+        val intent = Intent(context, DoorLogService::class.java)
+        context.stopService(intent)
+    }
+
+    companion object {
+        const val PERMISSION_REQUEST_CODE = 1001
     }
 }
