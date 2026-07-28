@@ -77,6 +77,36 @@ const formatDate = dateStr => {
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
+const lightStatus = document.getElementById('lightstatus');
+const lampIcon = lightStatus?.querySelector('.lamp-icon');
+
+const lightStates = {
+  0: { icon: 'light_off', occupied: false },
+  1: { icon: 'light_off', occupied: true },
+  2: { icon: 'lightbulb', occupied: false },
+  3: { icon: 'lightbulb', occupied: true }
+};
+
+let lastLightCode = null;
+
+function updateLightUI(code) {
+  if (!lightStatus || !lampIcon) return;
+  const state = lightStates[code];
+  if (!state || code === lastLightCode) return;
+  lastLightCode = code;
+
+  lightStatus.classList.toggle('occupied', state.occupied);
+  lampIcon.textContent = state.icon;
+
+  if (navigator.vibrate) {
+    navigator.vibrate([32, 48]);
+  }
+
+  lampIcon.classList.remove('squeeze');
+  void lampIcon.offsetWidth;
+  lampIcon.classList.add('squeeze');
+}
+
 let lastDoorState = null;
 let fetchTimer = null;
 let lastRawDataString = "";
@@ -85,8 +115,9 @@ async function fetchSheetData() {
   try {
     const res = await fetch(window.API_KEY);
     const raw = await res.json();
+
     const rows = Array.isArray(raw) ? raw : raw.values || [];
-    
+
     const currentStr = JSON.stringify(rows);
     if (currentStr === lastRawDataString) {
       return { unchanged: true };
@@ -95,10 +126,12 @@ async function fetchSheetData() {
 
     const history = rows.slice(0).reverse().map(row => {
       const timestamp = row.timestamp;
+
       return {
         time: formatAMPM(new Date(timestamp)),
         date: formatDate(new Date(timestamp)),
         door: row.status || 'UNKNOWN',
+        light: row.light !== undefined && row.light !== null ? Number(row.light) : null,
       };
     });
 
@@ -108,6 +141,7 @@ async function fetchSheetData() {
       history,
       lastOpened: history.find(e => e.door === 'OPEN') || null,
     };
+
   } catch {
     return null;
   }
@@ -118,25 +152,47 @@ async function fetchServerData() {
 
   if (!navigator.onLine) {
     const cached = localStorage.getItem('cached_logs');
-    if (cached && EL.eventList) EL.eventList.innerHTML = cached;
+
+    if (cached && EL.eventList)
+      EL.eventList.innerHTML = cached;
+
     return { changed: false };
   }
 
   const data = await fetchSheetData();
-  if (!data || data.unchanged) return { changed: false };
+
+  if (!data || data.unchanged)
+    return { changed: false };
 
   if (EL.doorStatus.textContent !== data.current.door)
     EL.doorStatus.textContent = data.current.door;
 
+  if (data.current.light !== null && data.current.light !== undefined) {
+    updateLightUI(data.current.light);
+  }
+
   let htmlBuilder = "";
+
   data.history.forEach(item => {
     const isOpen = item.door.toLowerCase() === 'open';
+
     htmlBuilder += `<li class="${isOpen ? 'open' : 'closed'}">
-      <span class="log-icon"><span class="material-symbols-rounded">${isOpen ? 'lock_open' : 'lock'}</span></span>
-      <span class="log-datetime">${item.time} | ${item.date}</span>
-      <span class="log-door">${item.door}</span>
+      <span class="log-icon">
+        <span class="material-symbols-rounded">
+          ${isOpen ? 'lock_open' : 'lock'}
+        </span>
+      </span>
+
+      <span class="log-datetime">
+        ${item.time} | ${item.date}
+      </span>
+
+      <span class="log-door">
+        ${item.door}
+      </span>
     </li>`;
   });
+
   EL.eventList.innerHTML = htmlBuilder;
   localStorage.setItem('cached_logs', htmlBuilder);
 
@@ -145,30 +201,50 @@ async function fetchServerData() {
 
   if (data.lastOpened) {
     const [time, period] = data.lastOpened.time.split(' ');
-    const [hour, min]    = time.split(':');
-    const newHour = hour.padStart(2, '0');
-    const changed = hourEl.textContent !== newHour || minEl.textContent !== min;
+    let [hour, min] = time.split(':');
+
+    hour = parseInt(hour, 10);
+
+    if (period) {
+      const p = period.toLowerCase();
+      if (p === 'pm' && hour !== 12) hour += 12;
+      if (p === 'am' && hour === 12) hour = 0;
+    }
+
+    const newHour = String(hour).padStart(2, '0');
+
+    const changed =
+      hourEl.textContent !== newHour ||
+      minEl.textContent !== min;
 
     hourEl.textContent = newHour;
-    minEl.textContent  = min;
+    minEl.textContent = min;
+
     $('lastOpenedDate').textContent = data.lastOpened.date;
 
     if (changed) {
       const lo = $('LastOpened');
+
       lo.classList.remove('pop');
+
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => lo.classList.add('pop'));
+        requestAnimationFrame(() => {
+          lo.classList.add('pop');
+        });
       });
+
       navigator.vibrate(48);
     }
+
   } else {
     hourEl.textContent = '-';
-    minEl.textContent  = '';
+    minEl.textContent = '';
   }
+
   return { changed: true };
 }
 
-const POLL_RATES = { 0: 10000, 1: 8000, 2: 5000, 3: null };
+const POLL_RATES = { 0: 10000, 1: 8000, 2: 5000, 3: 2000, 4: null };
 let recentChanges = [];
 
 function isHomeActive() {
@@ -190,8 +266,9 @@ function getNextInterval(changed) {
 const POLL_DESCS = {
   0: 'Checks for updates every 10 seconds. Saves battery and data.',
   1: 'Checks for updates every 8 seconds. Balanced for everyday use.',
-  2: 'Checks for updates every 5 seconds. Most responsive, uses more data.',
-  3: 'Adapts automatically. Speeds up when door activity is detected, slows down when idle.'
+  2: 'Checks for updates every 5 seconds. More responsive, uses more data.',
+  3: 'Checks for updates every 2 seconds. Fast (Real).',
+  4: 'Adapts automatically. Speeds up when door activity is detected, slows down when idle.'
 };
 
 let pollMode = parseInt(localStorage.getItem('pollMode') ?? '1');
@@ -224,8 +301,51 @@ function scheduleFetch() {
 
 EL.viewDatBtn?.addEventListener('click', () => {
   const url = getUrl('sheets_url');
-  if (url) window.open(url, '_blank');
+  if (url) window.confirmOpenInBrowser(url, 'Google Sheets', true);
 });
+
+function showMdConfirmDialog(opts) {
+  const icon = opts.icon || 'help';
+  const title = opts.title;
+  const body = opts.body;
+  const confirmLabel = opts.confirmLabel || 'Yes';
+  const cancelLabel = opts.cancelLabel || 'Cancel';
+  const onConfirm = opts.onConfirm;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'md-dialog-overlay';
+
+  overlay.innerHTML = `
+    <div class="md-dialog">
+      <span class="material-symbols-rounded md-dialog-icon" style="color: var(--md-sys-color-primary) !important;">${icon}</span>
+      <div class="md-dialog-title">${title}</div>
+      <div class="md-dialog-body">${body}</div>
+      <div class="md-dialog-actions">
+        <button class="md-dialog-btn cancel" id="mdConfirmCancelBtn">${cancelLabel}</button>
+        <button class="md-dialog-btn primary" style="background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important;" id="mdConfirmYesBtn">${confirmLabel}</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  void overlay.offsetHeight;
+  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('show')));
+
+  const close = () => {
+    overlay.classList.remove('show');
+    overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+  };
+
+  overlay.querySelector('#mdConfirmYesBtn').addEventListener('click', () => {
+    close();
+    if (onConfirm) onConfirm();
+  });
+
+  overlay.querySelector('#mdConfirmCancelBtn').addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+  return close;
+}
 
 async function downloadCSV(filename, limit = null) {
   if (isDownloading) return;
@@ -255,15 +375,25 @@ async function downloadCSV(filename, limit = null) {
     if (limit) rows = rows.slice(0, limit);
     const csv  = ['Time,Date,Door'].concat(rows.map(e => `${e.time},${e.date},${e.door}`)).join('\n');
 
-if (window.Android) {
-    window.Android.saveFileWithConfirm(filename, csv, 'text/csv', 'Confirm Download');
-} else {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(a.href);
-}
+    const doSave = () => {
+      if (window.Android) {
+        window.Android.saveFileWithConfirm(filename, csv, 'text/csv', 'Confirm Download');
+      } else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+    };
+
+    showMdConfirmDialog({
+      icon: 'download',
+      title: 'Download CSV?',
+      body: `Save ${filename} to your device.`,
+      confirmLabel: 'Save',
+      onConfirm: doSave
+    });
   } catch(e) {
      console.error(e);
   } finally {
@@ -419,31 +549,416 @@ document.querySelectorAll('.collapsible').forEach(header => {
   });
 });
 
-$('openSetupBtn').addEventListener('click', () => {
-  EL.pages.forEach(p => p.classList.remove('active'));
-  $('settings').classList.add('active');
-  EL.navBtns.forEach(b => b.classList.remove('active'));
-  document.querySelector('.nav-item[data-page="settings"]').classList.add('active');
+(function () {
+  let html5QrcodeLoaded = false;
+  let html5QrcodePromise = null;
 
-  const collapsible = document.querySelector('.settings-item.collapsible[data-target="apiConfig"]');
-  const content     = $(collapsible.dataset.target);
+  function loadHtml5QrcodeLibrary() {
+    if (html5QrcodeLoaded || window.Html5Qrcode) return Promise.resolve();
+    if (html5QrcodePromise) return html5QrcodePromise;
 
-  setTimeout(() => {
-    $('configSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    html5QrcodePromise = new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
+      script.onload = () => {
+        html5QrcodeLoaded = true;
+        resolve();
+      };
+      script.onerror = () => resolve();
+      document.head.appendChild(script);
+    });
+
+    return html5QrcodePromise;
+  }
+
+  function showDialog({ icon = 'info', title, body, actions, isPrimary = false }) {
+    const overlay = document.createElement('div');
+    overlay.className = 'md-dialog-overlay';
+
+    const iconAttr = isPrimary ? 'style="color: var(--md-sys-color-primary) !important;"' : '';
+
+    overlay.innerHTML = `
+      <div class="md-dialog">
+        <span class="material-symbols-rounded md-dialog-icon" ${iconAttr}>${icon}</span>
+        <div class="md-dialog-title">${title}</div>
+        <div class="md-dialog-body">${body}</div>
+        <div class="md-dialog-actions">
+          ${actions.map((a, i) => {
+            if (a.isPrimary) {
+              const style = 'background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important;';
+              return `<button class="md-dialog-btn primary" style="${style}" data-idx="${i}">${a.label}</button>`;
+            }
+            const cls = a.confirm ? 'confirm' : 'cancel';
+            return `<button class="md-dialog-btn ${cls}" data-idx="${i}">${a.label}</button>`;
+          }).join('')}
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    void overlay.offsetHeight;
+    requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('show')));
+
+    const close = () => {
+      overlay.classList.remove('show');
+      overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+    };
+
+    actions.forEach((a, i) => {
+      overlay.querySelector(`[data-idx="${i}"]`).addEventListener('click', () => {
+        close();
+        a.action?.();
+      });
+    });
+
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    return close;
+  }
+
+  function executeManualSetup() {
+    const pages = document.querySelectorAll('.page');
+    const navBtns = document.querySelectorAll('.nav-item');
+    
+    pages.forEach(p => p.classList.remove('active'));
+    const settingsPage = document.getElementById('settings');
+    if (settingsPage) settingsPage.classList.add('active');
+
+    navBtns.forEach(b => b.classList.remove('active'));
+    document.querySelector('.nav-item[data-page="settings"]')?.classList.add('active');
+
+    const collapsible = document.querySelector('.settings-item.collapsible[data-target="apiConfig"]');
+    const content = collapsible ? document.getElementById(collapsible.dataset.target) : null;
+
     setTimeout(() => {
-      if (!content.classList.contains('open')) {
-        collapsible.classList.add('open');
-        content.classList.add('open', 'animating');
-        content.style.height = content.scrollHeight + 'px';
-        content.addEventListener('transitionend', () => {
-          content.style.height = 'auto';
-          content.classList.remove('animating');
-          setTimeout(() => content.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-        }, { once: true });
+      document.getElementById('configSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => {
+        if (content && !content.classList.contains('open')) {
+          collapsible.classList.add('open');
+          content.classList.add('open', 'animating');
+          content.style.height = content.scrollHeight + 'px';
+          content.addEventListener('transitionend', () => {
+            content.style.height = 'auto';
+            content.classList.remove('animating');
+            setTimeout(() => content.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+          }, { once: true });
+        }
+      }, 600);
+    }, 1000);
+  }
+
+  function parseQRData(rawContent) {
+    if (typeof rawContent === 'object' && rawContent !== null) return rawContent;
+    try {
+      let parsed = JSON.parse(rawContent);
+      if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+      return parsed;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function applyConfigData(configObj) {
+    if (typeof window.restoreConfigOnly === 'function') {
+      window.restoreConfigOnly(configObj);
+      return;
+    }
+
+    const parsed = parseQRData(configObj);
+    if (!parsed) {
+      showDialog({
+        icon: 'error',
+        title: 'Setup Failed',
+        body: 'The scanned QR code does not contain valid JSON data.',
+        actions: [{ label: 'OK', confirm: true }]
+      });
+      return;
+    }
+
+    showDialog({
+      icon: 'error',
+      title: 'Setup Failed',
+      body: 'Configuration restore is unavailable right now. Please try again.',
+      actions: [{ label: 'OK', confirm: true }]
+    });
+  }
+
+  window.processQRImageFile = async function (file) {
+    if (!file) return;
+
+    if (window.Android && typeof window.Android.scanQRCode === 'function') {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = window.Android.scanQRCode(e.target.result);
+        if (result) {
+          applyConfigData(result);
+        } else {
+          showDialog({
+            icon: 'error',
+            title: 'QR Scan Failed',
+            body: 'No valid QR code found in selected image.',
+            actions: [{ label: 'OK', confirm: true }]
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    if ('BarcodeDetector' in window) {
+      try {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        await img.decode();
+        const detector = new BarcodeDetector({ formats: ['qr_code'] });
+        const codes = await detector.detect(img);
+        URL.revokeObjectURL(img.src);
+
+        if (codes.length > 0) {
+          applyConfigData(codes[0].rawValue);
+          return;
+        }
+      } catch (err) {}
+    }
+
+    await loadHtml5QrcodeLibrary();
+    if (window.Html5Qrcode) {
+      try {
+        const tempContainer = document.createElement('div');
+        tempContainer.id = 'temp_qr_reader_' + Date.now();
+        tempContainer.style.display = 'none';
+        document.body.appendChild(tempContainer);
+
+        const html5QrCode = new window.Html5Qrcode(tempContainer.id);
+        const result = await html5QrCode.scanFile(file, true);
+        tempContainer.remove();
+        applyConfigData(result);
+        return;
+      } catch (err) {}
+    }
+
+    showDialog({
+      icon: 'error',
+      title: 'QR Scan Failed',
+      body: 'No valid QR code found in selected image.',
+      actions: [{ label: 'OK', confirm: true }]
+    });
+  };
+
+  function openQRScanModal() {
+    loadHtml5QrcodeLibrary();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'md-dialog-overlay';
+
+    overlay.innerHTML = `
+      <style>
+        .qr-target-box {
+          position: absolute;
+          width: 140px;
+          height: 140px;
+          border: 3px solid var(--md-sys-color-primary, #6750a4);
+          border-radius: 16px;
+          box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45);
+          pointer-events: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 5;
+        }
+        .qr-target-box::after {
+          content: '';
+          position: absolute;
+          width: 100%;
+          height: 2px;
+          background: var(--md-sys-color-primary, #6750a4);
+          box-shadow: 0 0 8px var(--md-sys-color-primary, #6750a4);
+          animation: qrScanLine 2s infinite ease-in-out;
+        }
+        @keyframes qrScanLine {
+          0% { top: 5%; opacity: 0.2; }
+          50% { top: 95%; opacity: 1; }
+          100% { top: 5%; opacity: 0.2; }
+        }
+        .md-dialog-btn-centered {
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          gap: 6px !important;
+        }
+        .md-dialog-btn-centered .material-symbols-rounded {
+          font-size: 18px !important;
+          line-height: 1 !important;
+          display: inline-block !important;
+        }
+      </style>
+      <div class="md-dialog qr-dialog">
+        <span class="material-symbols-rounded md-dialog-icon" style="color: var(--md-sys-color-primary) !important;">qr_code_scanner</span>
+        <div class="md-dialog-title">Scan Setup QR</div>
+        <div class="md-dialog-body">
+          <p id="qrHelpText" style="margin-bottom:12px; font-size:14px; opacity:0.8;">Fit QR code inside the frame to scan.</p>
+          <div id="qrReaderRegion" style="width:100%; height:220px; background:var(--md-sys-color-surface-container-high, #f0f0f0); border-radius:16px; overflow:hidden; display:flex; align-items:center; justify-content:center; position:relative;">
+            <video id="qrVideo" playsinline muted autoplay style="width:100%; height:100%; object-fit:cover; display:none; opacity:0; transition:opacity 0.15s ease;"></video>
+            
+            <div id="qrTargetBox" class="qr-target-box" style="display:none;"></div>
+            
+            <div id="qrPlaceholder" style="display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0.6;">
+              <span class="material-symbols-rounded" style="font-size:48px;">photo_library</span>
+              <span style="font-size:13px; margin-top:8px;">Select an image file</span>
+            </div>
+          </div>
+          <input type="file" id="galleryFileInput" accept="image/*" style="display:none;" />
+        </div>
+        <div class="md-dialog-actions">
+          <button class="md-dialog-btn cancel" id="closeQrBtn">Cancel</button>
+          <button class="md-dialog-btn primary md-dialog-btn-centered" style="background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important;" id="switchModeBtn">
+            <span class="material-symbols-rounded" id="switchBtnIcon">image</span> 
+            <span id="switchBtnLabel">Gallery</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    void overlay.offsetHeight;
+    requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('show')));
+
+    const video = overlay.querySelector('#qrVideo');
+    const placeholder = overlay.querySelector('#qrPlaceholder');
+    const targetBox = overlay.querySelector('#qrTargetBox');
+    const galleryInput = overlay.querySelector('#galleryFileInput');
+    const helpText = overlay.querySelector('#qrHelpText');
+    const switchBtn = overlay.querySelector('#switchModeBtn');
+    const switchBtnIcon = overlay.querySelector('#switchBtnIcon');
+    const switchBtnLabel = overlay.querySelector('#switchBtnLabel');
+
+    let stream = null;
+    let animFrameId = null;
+    let isCameraActive = false;
+
+    const stopCamera = () => {
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
       }
-    }, 600);
-  }, 1000);
-});
+      isCameraActive = false;
+      video.style.display = 'none';
+      video.style.opacity = '0';
+      targetBox.style.display = 'none';
+    };
+
+    const close = () => {
+      stopCamera();
+      overlay.classList.remove('show');
+      overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+    };
+
+    const processQRImage = async (file) => {
+      close();
+      window.processQRImageFile(file);
+    };
+
+    const startCameraScan = async () => {
+      if (window.Android && typeof window.Android.startQRScanner === 'function') {
+        window.Android.startQRScanner();
+        return;
+      }
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = stream;
+        video.style.display = 'block';
+        video.style.opacity = '0';
+        placeholder.style.display = 'none';
+        targetBox.style.display = 'flex';
+        helpText.textContent = 'Fit QR code inside the frame to scan.';
+
+        video.addEventListener('loadeddata', () => {
+          video.style.opacity = '1';
+        }, { once: true });
+
+        await video.play();
+
+        isCameraActive = true;
+        switchBtnIcon.textContent = 'image';
+        switchBtnLabel.textContent = 'Gallery';
+
+        if ('BarcodeDetector' in window) {
+          const detector = new BarcodeDetector({ formats: ['qr_code'] });
+          const scanLoop = async () => {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+              try {
+                const codes = await detector.detect(video);
+                if (codes.length > 0) {
+                  close();
+                  applyConfigData(codes[0].rawValue);
+                  return;
+                }
+              } catch (e) {}
+            }
+            if (isCameraActive) {
+              animFrameId = requestAnimationFrame(scanLoop);
+            }
+          };
+          scanLoop();
+        }
+      } catch (err) {
+        switchToGalleryMode();
+      }
+    };
+
+    const switchToGalleryMode = () => {
+      stopCamera();
+      placeholder.style.display = 'flex';
+      helpText.textContent = 'Select a QR code image from your gallery.';
+      switchBtnIcon.textContent = 'photo_camera';
+      switchBtnLabel.textContent = 'Camera';
+    };
+
+    switchBtn.addEventListener('click', () => {
+      if (isCameraActive) {
+        switchToGalleryMode();
+        galleryInput.click();
+      } else {
+        startCameraScan();
+      }
+    });
+
+    window.onNativeQRScanned = function (qrContent) {
+      close();
+      applyConfigData(qrContent);
+    };
+
+    galleryInput.addEventListener('change', (e) => processQRImage(e.target.files[0]));
+
+    overlay.querySelector('#closeQrBtn').addEventListener('click', close);
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+    startCameraScan();
+  }
+
+  const openSetupBtn = document.getElementById('openSetupBtn');
+  openSetupBtn?.addEventListener('click', () => {
+    showDialog({
+      icon: 'dashboard_customize',
+      title: 'Setup DormGuard',
+      body: 'Choose how you would like to configure your DormGuard instance.',
+      isPrimary: true,
+      actions: [
+        { label: 'Cancel' },
+        { 
+          label: 'Manual Setup', 
+          action: executeManualSetup 
+        },
+        { 
+          label: 'QR Setup', 
+          isPrimary: true, 
+          action: openQRScanModal 
+        }
+      ]
+    });
+  });
+})();
 
 let hideSeconds = false;
 const clockContainer = EL.currentTime?.parentElement; 
@@ -706,3 +1221,91 @@ document.querySelector('.app-version').addEventListener('click', async () => {
   });
   location.reload(true);
 });
+
+// open in browser
+const DOMAIN_LABELS = {
+  'github.com': 'GitHub',
+  'discord.gg': 'Discord',
+  'discord.com': 'Discord',
+  'tiktok.com': 'TikTok',
+  'google.com': 'Google',
+  'nodejs.org': 'Node.js',
+  'uiverse.io': 'Uiverse'
+};
+
+function getDomainLabel(url) {
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./, '');
+    for (const domain in DOMAIN_LABELS) {
+      if (hostname === domain || hostname.endsWith('.' + domain)) {
+        return DOMAIN_LABELS[domain];
+      }
+    }
+  } catch (e) {
+    return null;
+  }
+  return null;
+}
+
+window.confirmOpenInBrowser = function (url, label, mayHaveApp) {
+  const resolvedLabel = label || getDomainLabel(url);
+  const destination = mayHaveApp ? 'browser or app' : 'browser';
+
+  showMdConfirmDialog({
+    icon: 'open_in_new',
+    title: `Open in ${destination}?`,
+    body: resolvedLabel ? `Open ${resolvedLabel} in your ${destination}.` : url,
+    confirmLabel: 'Yes',
+    onConfirm: () => {
+      if (window.Android && typeof window.Android.openInBrowser === 'function') {
+        window.Android.openInBrowser(url);
+      } else {
+        window.open(url, '_blank');
+      }
+    }
+  });
+};
+
+// system info
+(function () {
+  const androidVersionEl = document.getElementById('sysAndroidVersion');
+  const deviceEl = document.getElementById('sysDevice');
+  const architectureEl = document.getElementById('sysArchitecture');
+
+  if (!androidVersionEl || !deviceEl || !architectureEl) return;
+
+  function renderSystemInfo(info) {
+    if (info.androidVersion != null && info.sdkInt != null) {
+      androidVersionEl.textContent = `${info.androidVersion} (SDK ${info.sdkInt})`;
+    }
+    if (info.manufacturer != null && info.model != null) {
+      const manufacturer = String(info.manufacturer);
+      const model = String(info.model);
+      const capitalizedManufacturer = manufacturer.charAt(0).toUpperCase() + manufacturer.slice(1);
+      deviceEl.textContent = model.toLowerCase().startsWith(manufacturer.toLowerCase())
+        ? model
+        : `${capitalizedManufacturer} ${model}`;
+    }
+    if (info.architecture != null) {
+      architectureEl.textContent = info.architecture;
+    }
+  }
+
+  if (window.Android && typeof window.Android.getSystemInfo === 'function') {
+    try {
+      const json = window.Android.getSystemInfo();
+      const info = JSON.parse(json);
+      renderSystemInfo(info);
+    } catch (e) {
+      androidVersionEl.textContent = 'Unavailable';
+      deviceEl.textContent = 'Unavailable';
+      architectureEl.textContent = 'Unavailable';
+    }
+  } else {
+    const ua = navigator.userAgent;
+    const androidMatch = ua.match(/Android\s([0-9.]+)/);
+    androidVersionEl.textContent = androidMatch ? androidMatch[1] : 'Unavailable';
+    deviceEl.textContent = 'Unavailable (web preview)';
+    architectureEl.textContent = 'Unavailable (web preview)';
+  }
+})();

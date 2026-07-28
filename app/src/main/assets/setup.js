@@ -1,4 +1,4 @@
- document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
   const stpPages = document.querySelector(".stp-pages");
   const dots = document.querySelectorAll(".stp-dot");
 
@@ -160,6 +160,7 @@
     toast.className = "toast";
     toast.innerHTML = `<span class="material-symbols-rounded">${icon}</span>${message}`;
     document.body.appendChild(toast);
+    void toast.offsetHeight;
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => toast.classList.add("show"));
@@ -188,6 +189,7 @@
     toast.className = 'toast-emote';
     toast.innerHTML = `<span class="material-symbols-rounded">sentiment_stressed</span>${message}`;
     document.body.appendChild(toast);
+    void toast.offsetHeight;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => toast.classList.add('show'));
     });
@@ -357,6 +359,7 @@
     `;
 
     document.body.appendChild(overlay);
+    void overlay.offsetHeight;
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => overlay.classList.add("show"));

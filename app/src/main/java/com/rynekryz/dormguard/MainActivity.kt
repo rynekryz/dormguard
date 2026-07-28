@@ -1,5 +1,6 @@
 package com.rynekryz.dormguard
 
+import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -8,37 +9,58 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.color.DynamicColors
 import com.rynekryz.dormguard.bridge.WebAppInterface
 import com.rynekryz.dormguard.notifications.DoorLogService
 import com.rynekryz.dormguard.webview.WebViewConfig
 
 class MainActivity : AppCompatActivity() {
-
     private lateinit var webViewConfig: WebViewConfig
     private var webInterface: WebAppInterface? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val sharedPrefs = getSharedPreferences("dormguard", Context.MODE_PRIVATE)
+        if (sharedPrefs.getBoolean("dynamic_color_enabled", false)) {
+            DynamicColors.applyToActivityIfAvailable(this)
+        }
+
         createNotificationChannel()
         restoreNotificationService()
-
         webViewConfig = WebViewConfig(this)
         setContentView(webViewConfig.webView)
-        webInterface = WebAppInterface(this)
+        webInterface = WebAppInterface(this, webViewConfig.webView)
         webViewConfig.webView.addJavascriptInterface(webInterface!!, "Android")
         webViewConfig.loadApp()
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == WebAppInterface.RESTORE_FILE_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            data?.data?.let { uri ->
+                webInterface?.onRestoreFileSelected(uri)
+            }
+        } else if (requestCode == WebViewConfig.FILE_CHOOSER_REQUEST_CODE) {
+            val uri = if (resultCode == Activity.RESULT_OK) data?.data else null
+            webViewConfig.onFileChooserResult(uri)
+        }
+    }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if (requestCode == WebAppInterface.PERMISSION_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                webInterface?.showFrequencyDialog()
-            } else {
-                val sharedPrefs = getSharedPreferences("dormguard", Context.MODE_PRIVATE)
-                sharedPrefs.edit().putBoolean("notifications_enabled", false).apply()
+        when (requestCode) {
+            WebAppInterface.PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    webInterface?.showFrequencyDialog()
+                } else {
+                    val sharedPrefs = getSharedPreferences("dormguard", Context.MODE_PRIVATE)
+                    sharedPrefs.edit().putBoolean("notifications_enabled", false).apply()
+                }
+            }
+            WebViewConfig.CAMERA_PERMISSION_REQUEST_CODE -> {
+                val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                webViewConfig.onCameraPermissionResult(granted)
             }
         }
     }

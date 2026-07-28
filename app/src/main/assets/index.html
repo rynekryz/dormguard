@@ -75,10 +75,16 @@
                </div>
             </div>
             <div class="controls">
-               <button class="md-btn setup-btn" id="openSetupBtn">  
-               <span class="material-symbols-rounded">dashboard_customize</span>  
-               Setup DormGuard  
-               </button>  
+               <div class="box-real">
+                  <button class="md-btn setup-btn" id="openSetupBtn">  
+                  <span class="material-symbols-rounded">dashboard_customize</span>  
+                  Setup DormGuard  
+                  </button>  
+                  <span class="bro-is-the-lamp-on" id="lightstatus">
+                  <span class="material-symbols-rounded lamp-icon">light_off</span>
+                  <span class="status-text">Occupied</span>
+                  </span>
+               </div>
                <div class="settings-section">
                   <div class="settings-left">
                      <div class="label">  
@@ -153,14 +159,32 @@
                   </label>  
                </div>
                <div class="settings-header">App</div>
-               <div class="settings-item">  
-                  <span class="material-symbols-rounded">dark_mode</span>  
-                  <span class="setting-text">Dark Mode</span>  
-                  <label class="md-switch">  
-                  <input type="checkbox" id="darkModeSwitch">  
-                  <span></span>  
-                  </label>  
-               </div>
+               <div class="settings-item" id="paletteItem">  
+   <span class="material-symbols-rounded">format_paint</span>  
+   <span class="setting-text">Color Palette</span>
+   <label class="md-switch" id="paletteSwitch">  
+      <input type="checkbox" id="paletteCheckbox">  
+      <span></span>  
+   </label>  
+</div>
+
+<div class="settings-item" id="dynamicColorItem">  
+   <span class="material-symbols-rounded">palette</span>  
+   <span class="setting-text">Dynamic Color</span>  
+   <label class="md-switch">  
+      <input type="checkbox" id="dynamicColorSwitch">  
+      <span></span>  
+   </label>  
+</div>
+
+<div class="settings-item">  
+   <span class="material-symbols-rounded">dark_mode</span>  
+   <span class="setting-text">Dark Mode</span>  
+   <label class="md-switch">  
+      <input type="checkbox" id="darkModeSwitch">  
+      <span></span>  
+   </label>  
+</div>
                <div class="settings-item">  
                   <span class="material-symbols-rounded">notifications</span>  
                   <span class="setting-text">Notification</span>  
@@ -183,12 +207,13 @@
                      <span class="setting-text">Monitoring Frequency</span>  
                   </div>
                   <div class="poll-rate-control">
-                     <input type="range" id="pollRateSlider" class="md-slider" min="0" max="3" step="1" value="1">  
+                     <input type="range" id="pollRateSlider" class="md-slider" min="0" max="4" step="1" value="1">  
                      <div class="poll-rate-labels">  
                         <span data-val="0">Low</span>  
                         <span data-val="1">Medium</span>  
                         <span data-val="2">High</span>  
-                        <span data-val="3">Smart</span>  
+                        <span data-val="3">Max</span> 
+                        <span data-val="4">Smart</span>  
                      </div>
                      <div class="poll-rate-desc">  
                         <span class="material-symbols-rounded">info</span>  
@@ -386,35 +411,76 @@
                                  <span class="material-symbols-rounded">content_copy</span>  
                                  </button>  
                                  <div class="card__content">
-                                    <pre>  
-function doGet(e) {  
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet1");  
-  const data = sheet.getDataRange().getValues();  const rows = data.map(row => ({
-time: row[0],
-date: row[1],
-door: row[2]
-}));
+                                    <pre>
+  function doGet(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var values = sheet.getDataRange().getValues();
 
-return ContentService
-.createTextOutput(JSON.stringify(rows))
-.setMimeType(ContentService.MimeType.JSON);
+  // headers
+  if (values.length === 0) {
+    sheet.appendRow(["Time", "Date", "Door", "Light"]);
+    values = sheet.getDataRange().getValues();
+  }
+
+  // logging
+  if (e.parameter.door || e.parameter.light) {
+    var door = e.parameter.door || "";
+    var light = e.parameter.light !== undefined ? e.parameter.light : "";
+    var now = new Date();
+    var dateStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    var timeStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'HH:mm:ss');
+
+    sheet.appendRow([timeStr, dateStr, door, light]);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: true,
+        door: door,
+        light: light,
+        time: timeStr,
+        date: dateStr
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // fetch logs
+  var dataRows = values.slice(1);
+  var latestRows = dataRows.slice(-64);
+
+  var logs = latestRows.map(row => {
+    var dateObj = new Date(row[1]);
+
+    // time
+    var timeVal = row[0];
+    var h = 0, m = 0, s = 0;
+
+    if (timeVal && typeof timeVal.getHours === "function") {
+      h = timeVal.getHours();
+      m = timeVal.getMinutes();
+      s = timeVal.getSeconds();
+    } else if (typeof timeVal === "string" && timeVal.indexOf(":") !== -1) {
+      var parts = timeVal.split(":");
+      h = Number(parts[0]) || 0;
+      m = Number(parts[1]) || 0;
+      s = Number(parts[2]) || 0;
+    }
+
+    // combine
+    dateObj.setHours(h, m, s, 0);
+    var timestamp = dateObj.getTime();
+
+    return {
+      timestamp: timestamp,
+      status: (row[2] || "CLOSED").toUpperCase(),
+      light: row[3] !== undefined && row[3] !== "" ? Number(row[3]) : null
+    };
+  });
+
+  return ContentService
+    .createTextOutput(JSON.stringify(logs))
+    .setMimeType(ContentService.MimeType.JSON);
 }
-
-function doPost(e) {
-const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet1");
-const params = JSON.parse(e.postData.contents);
-
-sheet.appendRow([
-params.time || new Date().toISOString(),
-params.date || new Date().toLocaleDateString(),
-params.door || "UNKNOWN"
-]);
-
-return ContentService
-.createTextOutput(JSON.stringify({ status: "ok" }))
-.setMimeType(ContentService.MimeType.JSON);
-}
-</pre>
+                                    </pre>
                                  </div>
                               </div>
                            </div>
@@ -465,6 +531,22 @@ return ContentService
                      </div>
                   </div>
                </div>
+               <div class="settings-header">Data Management</div>
+               <div class="settings-item" id="backupBtn">  
+                  <span class="material-symbols-rounded">backup</span>  
+                  <span class="setting-text">Backup</span>
+                  <span class="material-symbols-rounded">chevron_forward</span>  
+               </div>
+               <div class="settings-item" id="restoreBtn">  
+                  <span class="material-symbols-rounded">settings_backup_restore</span>  
+                  <span class="setting-text">Restore</span>
+                  <span class="material-symbols-rounded">chevron_forward</span>  
+               </div>
+               <div class="settings-item" onclick="confirmReset()">  
+                  <span class="material-symbols-rounded">delete_forever</span>  
+                  <span class="setting-text">Reset All Data</span>
+                  <span class="material-symbols-rounded">info</span>  
+               </div>
             </div>
          </div>
       </main>
@@ -482,7 +564,7 @@ return ContentService
                <img src="icon.png" alt="Icon" id="dormguard" />
                <div class="info-text">
                   <div>Dorm Guard</div>
-                  <div class="ver">v0.6.0-beta (060)</div>
+                  <div class="ver">v0.7.0-beta (070)</div>
                </div>
             </div>
             <div class="wavy-divider">_______________________________</div>
@@ -520,7 +602,7 @@ return ContentService
                <div id="creditsBox">
                   <div id="creditsTitle">Credits <span class="material-symbols-rounded">book_2</span></div>
                   <div id="creditsList">
-                     <div class="credits-item" onclick="window.open('https://developers.google.com/sheets/api', '_blank')">
+                     <div class="credits-item" onclick="confirmOpenInBrowser('https://developers.google.com/sheets/api', 'Google Sheets API')">
                         <span class="material-symbols-rounded">code</span>
                         <div class="credits-info">
                            <span class="credits-name">Google Sheets API</span>
@@ -529,7 +611,7 @@ return ContentService
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
                      <div class="credits-divider"></div>
-                     <div class="credits-item" onclick="window.open('https://fonts.google.com/icons', '_blank')">
+                     <div class="credits-item" onclick="confirmOpenInBrowser('https://fonts.google.com/icons', 'Material Design Icons')">
                         <span class="material-symbols-rounded">palette</span>
                         <div class="credits-info">
                            <span class="credits-name">Material Design Icons</span>
@@ -538,7 +620,7 @@ return ContentService
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
                      <div class="credits-divider"></div>
-                     <div class="credits-item" onclick="window.open('https://fonts.google.com', '_blank')">
+                     <div class="credits-item" onclick="confirmOpenInBrowser('https://fonts.google.com', 'Google Fonts')">
                         <span class="material-symbols-rounded">font_download</span>
                         <div class="credits-info">
                            <span class="credits-name">Google Sans Flex & Fredoka</span>
@@ -547,7 +629,7 @@ return ContentService
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
                      <div class="credits-divider"></div>
-                     <div class="credits-item" onclick="window.open('https://m3.material.io/blog/building-with-m3-expressive', '_blank')">
+                     <div class="credits-item" onclick="confirmOpenInBrowser('https://m3.material.io/blog/building-with-m3-expressive', 'Material You Expressive')">
                         <span class="material-symbols-rounded">cloud</span>
                         <div class="credits-info">
                            <span class="credits-name">Material You Expressive</span>
@@ -556,7 +638,16 @@ return ContentService
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
                      <div class="credits-divider"></div>
-                     <div class="credits-item" onclick="window.open('https://github.com/aistra0528/Hail', '_blank')">
+                     <div class="credits-item" onclick="confirmOpenInBrowser('https://fontawesome.com/', 'Font Awesome')">
+                        <span class="material-symbols-rounded">shield</span>
+                        <div class="credits-info">
+                           <span class="credits-name">App icon design</span>
+                           <span class="credits-sub">by Font Awesome</span>
+                        </div>
+                        <span class="material-symbols-rounded credits-link">open_in_new</span>
+                     </div>
+                     <div class="credits-divider"></div>
+                     <div class="credits-item" onclick="confirmOpenInBrowser('https://github.com/aistra0528/Hail', 'GitHub')">
                         <span class="material-symbols-rounded">ac_unit</span>
                         <div class="credits-info">
                            <span class="credits-name">About screen inspiration: Metrolist, Hail</span>
@@ -565,7 +656,7 @@ return ContentService
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
                      <div class="credits-divider"></div>
-                     <div class="credits-item" onclick="window.open('https://uiverse.io/20essentials/dry-mayfly-12', '_blank')">
+                     <div class="credits-item" onclick="confirmOpenInBrowser('https://uiverse.io/20essentials/dry-mayfly-12', 'Uiverse')">
                         <span class="material-symbols-rounded">videogame_asset</span>
                         <div class="credits-info">
                            <span class="credits-name">Dino on loading screen</span>
@@ -574,7 +665,34 @@ return ContentService
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
                      <div class="credits-divider"></div>
-                     <div class="credits-item" onclick="window.open('https://nodejs.org', '_blank')">
+                     <div class="credits-item" onclick="confirmOpenInBrowser('https://github.com/mebjas/html5-qrcode', 'GitHub')">
+                        <span class="material-symbols-rounded">qr_code_scanner</span>
+                        <div class="credits-info">
+                           <span class="credits-name">html5-qrcode</span>
+                           <span class="credits-sub">by mebjas</span>
+                        </div>
+                        <span class="material-symbols-rounded credits-link">open_in_new</span>
+                     </div>
+                     <div class="credits-divider"></div>
+                     <div class="credits-item" onclick="confirmOpenInBrowser('https://github.com/kazuhikoarase/qrcode-generator', 'GitHub')">
+                        <span class="material-symbols-rounded">qr_code_2</span>
+                        <div class="credits-info">
+                           <span class="credits-name">qrcode-generator</span>
+                           <span class="credits-sub">by Kazuhiko Arase</span>
+                        </div>
+                        <span class="material-symbols-rounded credits-link">open_in_new</span>
+                     </div>
+                     <div class="credits-divider"></div>
+                     <div class="credits-item" onclick="confirmOpenInBrowser('https://www.denso-wave.com/en/adcd/fundamental/qrcode/index.html', 'DENSO WAVE')">
+                        <span class="material-symbols-rounded">verified</span>
+                        <div class="credits-info">
+                           <span class="credits-name">"QR Code" is a registered trademark</span>
+                           <span class="credits-sub">of DENSO WAVE INCORPORATED</span>
+                        </div>
+                        <span class="material-symbols-rounded credits-link">open_in_new</span>
+                     </div>
+                     <div class="credits-divider"></div>
+                     <div class="credits-item" onclick="confirmOpenInBrowser('https://nodejs.org', 'Node.js')">
                         <span class="material-symbols-rounded">terminal</span>
                         <div class="credits-info">
                            <span class="credits-name">Node.js</span>
@@ -586,7 +704,33 @@ return ContentService
                   <div id="creditsDivider"></div>
                </div>
             </div>
-            <div class="app-version">050726</div>
+            <div id="sysInfoBox">
+               <div id="sysInfoTitle">System Information <span class="material-symbols-rounded">memory</span></div>
+               <ul id="sysInfoList">
+                  <li class="sysinfo-item">
+                     <span class="material-symbols-rounded">android</span>
+                     <div class="sysinfo-info">
+                        <span class="sysinfo-name">Android Version</span>
+                        <span class="sysinfo-value" id="sysAndroidVersion">—</span>
+                     </div>
+                  </li>
+                  <li class="sysinfo-item">
+                     <span class="material-symbols-rounded">smartphone</span>
+                     <div class="sysinfo-info">
+                        <span class="sysinfo-name">Device</span>
+                        <span class="sysinfo-value" id="sysDevice">—</span>
+                     </div>
+                  </li>
+                  <li class="sysinfo-item">
+                     <span class="material-symbols-rounded">memory</span>
+                     <div class="sysinfo-info">
+                        <span class="sysinfo-name">Architecture</span>
+                        <span class="sysinfo-value" id="sysArchitecture">—</span>
+                     </div>
+                  </li>
+               </ul>
+            </div>
+            <div class="app-version">280726</div>
          </div>
       </main>
       <nav class="bottom-nav">
@@ -607,6 +751,65 @@ return ContentService
          <span class="nav-label">About</span>
          </button>
       </nav>
+      <div id="themeModal" style="display:none;">
+         <div id="themeBackdrop" onclick="closeThemeModal()"></div>
+         <div id="themeBox">
+            <div id="themeTitle">Themes <span class="material-symbols-rounded">palette</span></div>
+            <div id="themeList">
+               <div class="theme-option" onclick="applyPalette('strawberry')" id="theme-strawberry">
+                  <span class="material-symbols-rounded theme-swatch" style="color: rgb(240, 182, 193)">favorite</span>
+                  <span class="theme-name">Strawberry Cupcake</span>
+                  <span class="material-symbols-rounded theme-check" id="check-strawberry">check</span>
+               </div>
+               <div class="theme-divider"></div>
+               <div class="theme-option" onclick="applyPalette('tomato')" id="theme-tomato">
+                  <span class="material-symbols-rounded theme-swatch" style="color: rgb(220, 70, 60)">nutrition</span>
+                  <span class="theme-name">Tomato Jelly</span>
+                  <span class="material-symbols-rounded theme-check" id="check-tomato">check</span>
+               </div>
+               <div class="theme-divider"></div>
+               <div class="theme-option" onclick="applyPalette('honey')" id="theme-honey">
+                  <span class="material-symbols-rounded theme-swatch" style="color: rgb(240, 180, 60)">database</span>
+                  <span class="theme-name">Honey Amber</span>
+                  <span class="material-symbols-rounded theme-check" id="check-honey">check</span>
+               </div>
+               <div class="theme-divider"></div>
+               <div class="theme-option" onclick="applyPalette('mint')" id="theme-mint">
+                  <span class="material-symbols-rounded theme-swatch" style="color: rgb(170, 230, 210)">eco</span>
+                  <span class="theme-name">Mint Breeze</span>
+                  <span class="material-symbols-rounded theme-check" id="check-mint">check</span>
+               </div>
+               <div class="theme-divider"></div>
+               <div class="theme-option" onclick="applyPalette('android')" id="theme-android">
+                  <span class="material-symbols-rounded theme-swatch" style="color: rgb(164, 198, 57)">adb</span>
+                  <span class="theme-name">Android Green</span>
+                  <span class="material-symbols-rounded theme-check" id="check-android">check</span>
+               </div>
+               <div class="theme-divider"></div>
+               <div class="theme-option" onclick="applyPalette('blueberry')" id="theme-blueberry">
+                  <span class="material-symbols-rounded theme-swatch" style="color: rgb(100, 120, 200)">adjust</span>
+                  <span class="theme-name">Blueberry Muffin</span>
+                  <span class="material-symbols-rounded theme-check" id="check-blueberry">check</span>
+               </div>
+               <div class="theme-divider"></div>
+               <div class="theme-option" onclick="applyPalette('amethyst')" id="theme-amethyst">
+                  <span class="material-symbols-rounded theme-swatch" style="color: rgb(155, 110, 200)">diamond</span>
+                  <span class="theme-name">Amethyst Shard</span>
+                  <span class="material-symbols-rounded theme-check" id="check-amethyst">check</span>
+               </div>
+               <div class="theme-divider"></div>
+               <div class="theme-option" onclick="applyPalette('coco')" id="theme-coco">
+                  <span class="material-symbols-rounded theme-swatch" style="color: rgb(210, 180, 140)">local_cafe</span>
+                  <span class="theme-name">Coco Cream</span>
+                  <span class="material-symbols-rounded theme-check" id="check-coco">check</span>
+               </div>
+            </div>
+            <div id="themeDivider"></div>
+            <div id="themeActions">
+               <button onclick="closeThemeModal()">Close</button>
+            </div>
+         </div>
+      </div>
       <script>
          const copyBtn = document.getElementById('copyApiCode');
          const codeContainer = document.getElementById('apiCodeContainer');
@@ -736,5 +939,7 @@ return ContentService
            
       </script>  
       <script defer src="ctrls.js"></script>
+      <script defer src="themes.js"></script>
+      <script defer src="backups.js"></script>
    </body>
 </html>

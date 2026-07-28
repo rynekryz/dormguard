@@ -122,24 +122,37 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {}
   }
 
-  function startPolling() {
-    if (doorPollTimer || alertPollTimer) return;
+  function scheduleAlertPoll() {
+  clearTimeout(alertPollTimer);
+  if (!deviceControlsEnabled()) return;
 
-    doorPollTimer = setInterval(() => {
-      if (!doorStatusEl) return;
-      const current = doorStatusEl.textContent;
-      if (current !== lastKnownDoor) {
-        lastKnownDoor = current;
-        if (current === 'CLOSED') {
-          resetAlert();
-          alertCooldown = false;
-        }
+  const rate = POLL_RATES[pollMode] ?? 5000;
+  if (rate === null) return;
+
+  alertPollTimer = setTimeout(async () => {
+    await syncEspAlert();
+    scheduleAlertPoll();
+  }, rate);
+}
+
+function startPolling() {
+  if (doorPollTimer || alertPollTimer) return;
+
+  doorPollTimer = setInterval(() => {
+    if (!doorStatusEl) return;
+    const current = doorStatusEl.textContent;
+    if (current !== lastKnownDoor) {
+      lastKnownDoor = current;
+      if (current === 'CLOSED') {
+        resetAlert();
+        alertCooldown = false;
       }
-    }, 300);
+    }
+  }, 300);
 
-    syncEspAlert();
-    alertPollTimer = setInterval(syncEspAlert, 2000);
-  }
+  syncEspAlert();
+  scheduleAlertPoll();
+}
 
   function stopPolling() {
     if (doorPollTimer) clearInterval(doorPollTimer);
