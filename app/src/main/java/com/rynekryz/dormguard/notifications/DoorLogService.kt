@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
@@ -18,7 +17,7 @@ import java.net.URL
 class DoorLogService : Service() {
 
     private var pollingJob: kotlinx.coroutines.Job? = null
-    private val scope = CoroutineScope(Dispatchers.Default)
+    private val scope = CoroutineScope(Dispatchers.IO)
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val sharedPrefs = getSharedPreferences("dormguard", Context.MODE_PRIVATE)

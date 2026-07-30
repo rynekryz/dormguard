@@ -13,7 +13,6 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.provider.MediaStore
-import android.provider.Settings
 import android.util.Base64
 import android.view.View
 import android.webkit.JavascriptInterface
@@ -23,16 +22,13 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.work.WorkManager
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.rynekryz.dormguard.notifications.DoorLogPollingWorker
 import com.rynekryz.dormguard.notifications.DoorLogService
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.util.concurrent.TimeUnit
 
 class WebAppInterface(private val context: Context, private val webView: WebView? = null) {
 

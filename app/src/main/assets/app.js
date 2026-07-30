@@ -257,7 +257,7 @@ function canPoll() {
 }
 
 function getNextInterval(changed) {
-  if (pollMode !== 3) return POLL_RATES[pollMode];
+  if (pollMode !== 4) return POLL_RATES[pollMode];
   recentChanges.push(changed);
   if (recentChanges.length > 3) recentChanges.shift();
   return recentChanges.filter(Boolean).length >= 2 ? 5000 : 10000;
@@ -289,14 +289,13 @@ pollSlider.addEventListener('input', () => {
 });
 updateSliderFill(pollSlider);
 
-function scheduleFetch() {
+function scheduleFetch(delay = POLL_RATES[pollMode] ?? 8000) {
   clearTimeout(fetchTimer);
   if (!canPoll()) return;
   fetchTimer = setTimeout(async () => {
     const result = await fetchServerData();
-    getNextInterval(result?.changed ?? false);
-    scheduleFetch();
-  }, POLL_RATES[pollMode] ?? 8000);
+    scheduleFetch(getNextInterval(result?.changed ?? false) ?? 8000);
+  }, delay);
 }
 
 EL.viewDatBtn?.addEventListener('click', () => {
@@ -327,14 +326,7 @@ function showMdConfirmDialog(opts) {
     </div>
   `;
 
-  document.body.appendChild(overlay);
-  void overlay.offsetHeight;
-  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('show')));
-
-  const close = () => {
-    overlay.classList.remove('show');
-    overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
-  };
+  const close = mountMdOverlay(overlay);
 
   overlay.querySelector('#mdConfirmYesBtn').addEventListener('click', () => {
     close();
@@ -342,7 +334,6 @@ function showMdConfirmDialog(opts) {
   });
 
   overlay.querySelector('#mdConfirmCancelBtn').addEventListener('click', close);
-  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
 
   return close;
 }
@@ -549,6 +540,62 @@ document.querySelectorAll('.collapsible').forEach(header => {
   });
 });
 
+// Shared boilerplate for opening/closing any .md-dialog-overlay: appends it, forces a reflow
+// so the CSS transition reliably fires on first open, animates it in, and returns a close()
+// that animates out and removes the element once the transition ends.
+function mountMdOverlay(overlay) {
+  document.body.appendChild(overlay);
+  void overlay.offsetHeight;
+  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('show')));
+
+  const close = () => {
+    overlay.classList.remove('show');
+    overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+  };
+
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  return close;
+}
+window.mountMdOverlay = mountMdOverlay;
+
+// Shared md-dialog builder, reused by backups.js (defined once here since app.js loads first)
+function showDialog({ icon = 'info', title, body, actions, isPrimary = false }) {
+  const overlay = document.createElement('div');
+  overlay.className = 'md-dialog-overlay';
+
+  const iconAttr = isPrimary ? 'style="color: var(--md-sys-color-primary) !important;"' : '';
+
+  overlay.innerHTML = `
+    <div class="md-dialog">
+      <span class="material-symbols-rounded md-dialog-icon" ${iconAttr}>${icon}</span>
+      <div class="md-dialog-title">${title}</div>
+      <div class="md-dialog-body">${body}</div>
+      <div class="md-dialog-actions">
+        ${actions.map((a, i) => {
+          if (a.isPrimary) {
+            const style = 'background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important;';
+            return `<button class="md-dialog-btn primary" style="${style}" data-idx="${i}">${a.label}</button>`;
+          }
+          const cls = a.confirm ? 'confirm' : 'cancel';
+          return `<button class="md-dialog-btn ${cls}" data-idx="${i}">${a.label}</button>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  const close = mountMdOverlay(overlay);
+
+  actions.forEach((a, i) => {
+    overlay.querySelector(`[data-idx="${i}"]`).addEventListener('click', () => {
+      close();
+      a.action?.();
+    });
+  });
+
+  return close;
+}
+window.showDialog = showDialog;
+
 (function () {
   let html5QrcodeLoaded = false;
   let html5QrcodePromise = null;
@@ -569,50 +616,6 @@ document.querySelectorAll('.collapsible').forEach(header => {
     });
 
     return html5QrcodePromise;
-  }
-
-  function showDialog({ icon = 'info', title, body, actions, isPrimary = false }) {
-    const overlay = document.createElement('div');
-    overlay.className = 'md-dialog-overlay';
-
-    const iconAttr = isPrimary ? 'style="color: var(--md-sys-color-primary) !important;"' : '';
-
-    overlay.innerHTML = `
-      <div class="md-dialog">
-        <span class="material-symbols-rounded md-dialog-icon" ${iconAttr}>${icon}</span>
-        <div class="md-dialog-title">${title}</div>
-        <div class="md-dialog-body">${body}</div>
-        <div class="md-dialog-actions">
-          ${actions.map((a, i) => {
-            if (a.isPrimary) {
-              const style = 'background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important;';
-              return `<button class="md-dialog-btn primary" style="${style}" data-idx="${i}">${a.label}</button>`;
-            }
-            const cls = a.confirm ? 'confirm' : 'cancel';
-            return `<button class="md-dialog-btn ${cls}" data-idx="${i}">${a.label}</button>`;
-          }).join('')}
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-    void overlay.offsetHeight;
-    requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('show')));
-
-    const close = () => {
-      overlay.classList.remove('show');
-      overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
-    };
-
-    actions.forEach((a, i) => {
-      overlay.querySelector(`[data-idx="${i}"]`).addEventListener('click', () => {
-        close();
-        a.action?.();
-      });
-    });
-
-    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-    return close;
   }
 
   function executeManualSetup() {
@@ -818,9 +821,7 @@ document.querySelectorAll('.collapsible').forEach(header => {
       </div>
     `;
 
-    document.body.appendChild(overlay);
-    void overlay.offsetHeight;
-    requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('show')));
+    const closeOverlay = mountMdOverlay(overlay);
 
     const video = overlay.querySelector('#qrVideo');
     const placeholder = overlay.querySelector('#qrPlaceholder');
@@ -849,8 +850,7 @@ document.querySelectorAll('.collapsible').forEach(header => {
 
     const close = () => {
       stopCamera();
-      overlay.classList.remove('show');
-      overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+      closeOverlay();
     };
 
     const processQRImage = async (file) => {
@@ -1164,7 +1164,7 @@ startEmotes();
 
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof fetchServerData === 'function') {
-    fetchServerData().then(scheduleFetch);
+    fetchServerData().then(() => scheduleFetch());
   }
   
   setTimeout(() => {
@@ -1182,7 +1182,7 @@ document.addEventListener('visibilitychange', () => {
     stopEmotes();
   } else {
     startEmotes();
-    if (canPoll()) fetchServerData().then(scheduleFetch);
+    if (canPoll()) fetchServerData().then(() => scheduleFetch());
   }
 });
 

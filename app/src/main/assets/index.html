@@ -564,7 +564,7 @@
                <img src="icon.png" alt="Icon" id="dormguard" />
                <div class="info-text">
                   <div>Dorm Guard</div>
-                  <div class="ver">v0.7.0-beta (070)</div>
+                  <div class="ver">v0.7.1beta (071)</div>
                </div>
             </div>
             <div class="wavy-divider">_______________________________</div>
@@ -606,7 +606,7 @@
                         <span class="material-symbols-rounded">code</span>
                         <div class="credits-info">
                            <span class="credits-name">Google Sheets API</span>
-                           <span class="credits-sub">by Google</span>
+                           <span class="credits-sub">by Google | Google APIs Terms of Service</span>
                         </div>
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
@@ -615,7 +615,7 @@
                         <span class="material-symbols-rounded">palette</span>
                         <div class="credits-info">
                            <span class="credits-name">Material Design Icons</span>
-                           <span class="credits-sub">by Google</span>
+                           <span class="credits-sub">by Google | Apache License 2.0</span>
                         </div>
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
@@ -624,7 +624,7 @@
                         <span class="material-symbols-rounded">font_download</span>
                         <div class="credits-info">
                            <span class="credits-name">Google Sans Flex & Fredoka</span>
-                           <span class="credits-sub">by Google Fonts</span>
+                           <span class="credits-sub">by Google Fonts | SIL Open Font License 1.1</span>
                         </div>
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
@@ -642,7 +642,7 @@
                         <span class="material-symbols-rounded">shield</span>
                         <div class="credits-info">
                            <span class="credits-name">App icon design</span>
-                           <span class="credits-sub">by Font Awesome</span>
+                           <span class="credits-sub">by Font Awesome | CC BY 4.0</span>
                         </div>
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
@@ -651,7 +651,7 @@
                         <span class="material-symbols-rounded">ac_unit</span>
                         <div class="credits-info">
                            <span class="credits-name">About screen inspiration: Metrolist, Hail</span>
-                           <span class="credits-sub">by Mo Agamy, aistra0528</span>
+                           <span class="credits-sub">by Mo Agamy | GPL-3.0, aistra0528 | GPL-3.0</span>
                         </div>
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
@@ -660,7 +660,7 @@
                         <span class="material-symbols-rounded">videogame_asset</span>
                         <div class="credits-info">
                            <span class="credits-name">Dino on loading screen</span>
-                           <span class="credits-sub">by 20essentials | uiverse.io</span>
+                           <span class="credits-sub">by 20essentials | uiverse.io | MIT License</span>
                         </div>
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
@@ -669,7 +669,7 @@
                         <span class="material-symbols-rounded">qr_code_scanner</span>
                         <div class="credits-info">
                            <span class="credits-name">html5-qrcode</span>
-                           <span class="credits-sub">by mebjas</span>
+                           <span class="credits-sub">by mebjas | Apache License 2.0</span>
                         </div>
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
@@ -678,7 +678,7 @@
                         <span class="material-symbols-rounded">qr_code_2</span>
                         <div class="credits-info">
                            <span class="credits-name">qrcode-generator</span>
-                           <span class="credits-sub">by Kazuhiko Arase</span>
+                           <span class="credits-sub">by Kazuhiko Arase | MIT License</span>
                         </div>
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
@@ -696,7 +696,7 @@
                         <span class="material-symbols-rounded">terminal</span>
                         <div class="credits-info">
                            <span class="credits-name">Node.js</span>
-                           <span class="credits-sub">by OpenJS Foundation</span>
+                           <span class="credits-sub">by OpenJS Foundation | MIT License</span>
                         </div>
                         <span class="material-symbols-rounded credits-link">open_in_new</span>
                      </div>
@@ -704,6 +704,7 @@
                   <div id="creditsDivider"></div>
                </div>
             </div>
+            <div class="wavy-divider">_______________________________</div>
             <div id="sysInfoBox">
                <div id="sysInfoTitle">System Information <span class="material-symbols-rounded">memory</span></div>
                <ul id="sysInfoList">
@@ -730,7 +731,20 @@
                   </li>
                </ul>
             </div>
-            <div class="app-version">280726</div>
+            <div class="wavy-divider">_______________________________</div>
+            <div id="licenseBox">
+               <div id="licenseTitle">License <span class="material-symbols-rounded">balance</span></div>
+               <ul class="license">
+                  <li class="license-item">
+                     <span class="material-symbols-rounded">info</span>
+                     <div class="license-info">
+                        <span class="sysinfo-name">GNU General Public License v3.0</span>
+                        <span class="sysinfo-value">Free, open source software. You may use, study, share and improve this software.</span>
+                     </div>
+                  </li>
+               </ul>
+            </div>
+            <div class="app-version">300726</div>
          </div>
       </main>
       <nav class="bottom-nav">
@@ -848,21 +862,17 @@
                       </div>  
                     </div>  
                   `;  
-                  document.body.appendChild(overlay);  
-                  requestAnimationFrame(() => {  
-                    requestAnimationFrame(() => overlay.classList.add('show'));  
-                  });  
-                
-                  const closeDialog = () => {  
-                    overlay.classList.remove('show');  
-                    overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });  
+                  const closeOverlay = window.mountMdOverlay(overlay);
+
+                  const closeDialog = () => {
+                    closeOverlay();
                     codeVisible = false;  
                     toggleCodeBtn.innerHTML = '<span class="material-symbols-rounded">code</span> Show Code';  
                     if (navigator.vibrate) navigator.vibrate(30);  
                   };  
                 
                   overlay.querySelector('#closeCodeDialog').addEventListener('click', closeDialog);  
-                  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeDialog(); });  
+                  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeDialog(); });
                 
                   overlay.querySelector('#copyApiCodeDialog').addEventListener('click', () => {  
                     if (navigator.vibrate) navigator.vibrate(48);  

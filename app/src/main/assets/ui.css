@@ -1879,7 +1879,7 @@ button {
    gap: 8px
 }
 
-#sysInfoTitle {
+#sysInfoTitle, #licenseTitle {
    font-size: 1.0625rem;
    font-weight: 600;
    padding: 1.25rem 1rem .25rem;
@@ -1890,12 +1890,12 @@ button {
    gap: 8px
 }
 
-#sysInfoBox {
+#sysInfoBox, #licenseBox {
    display: flex;
    flex-direction: column;
 }
 
-#sysInfoList {
+#sysInfoList, .license {
    list-style: none;
    padding: 0;
    margin: .75rem .4rem;
@@ -1904,7 +1904,7 @@ button {
    gap: 2px
 }
 
-.sysinfo-item {
+.sysinfo-item, .license-item {
    display: flex;
    align-items: center;
    gap: 12px;
@@ -1921,16 +1921,16 @@ button {
    border-radius: 8px 8px 24px 24px
 }
 
-.sysinfo-item:only-child {
-   border-radius: 32px
+.sysinfo-item:only-child, .license-item:only-child {
+   border-radius: 24px
 }
 
-.sysinfo-item .material-symbols-rounded {
+.sysinfo-item .material-symbols-rounded, .license-item .material-symbols-rounded {
    font-size: 1.4rem;
    color: var(--md-sys-color-primary)
 }
 
-.sysinfo-info {
+.sysinfo-info, .license-info {
    flex: 1;
    display: flex;
    flex-direction: column;

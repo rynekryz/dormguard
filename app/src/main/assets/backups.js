@@ -49,49 +49,7 @@
     return { encode, loadLibrary };
   })();
 
-  function showDialog({ icon = 'info', title, body, actions, isPrimary = false }) {
-    const overlay = document.createElement('div');
-    overlay.className = 'md-dialog-overlay';
-
-    const iconAttr = isPrimary ? 'style="color: var(--md-sys-color-primary) !important;"' : '';
-
-    overlay.innerHTML = `
-      <div class="md-dialog">
-        <span class="material-symbols-rounded md-dialog-icon" ${iconAttr}>${icon}</span>
-        <div class="md-dialog-title">${title}</div>
-        <div class="md-dialog-body">${body}</div>
-        <div class="md-dialog-actions">
-          ${actions.map((a, i) => {
-            if (a.isPrimary) {
-              const style = 'background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important;';
-              return `<button class="md-dialog-btn primary" style="${style}" data-idx="${i}">${a.label}</button>`;
-            }
-            const cls = a.confirm ? 'confirm' : 'cancel';
-            return `<button class="md-dialog-btn ${cls}" data-idx="${i}">${a.label}</button>`;
-          }).join('')}
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-    void overlay.offsetHeight;
-    requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('show')));
-
-    const close = () => {
-      overlay.classList.remove('show');
-      overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
-    };
-
-    actions.forEach((a, i) => {
-      overlay.querySelector(`[data-idx="${i}"]`).addEventListener('click', () => {
-        close();
-        a.action?.();
-      });
-    });
-
-    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-    return close;
-  }
+  // showDialog is defined once in app.js (loaded before this file) and shared via window.showDialog
 
   function stampNow() {
     const now = new Date();
@@ -226,14 +184,7 @@
       </div>
     `;
 
-    document.body.appendChild(overlay);
-    void overlay.offsetHeight;
-    requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('show')));
-
-    const close = () => {
-      overlay.classList.remove('show');
-      overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
-    };
+    const close = mountMdOverlay(overlay);
 
     const canvas = overlay.querySelector('#exportQrCanvas');
     const qrData = getConfigOnlyPayload();

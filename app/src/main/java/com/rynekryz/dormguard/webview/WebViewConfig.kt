@@ -13,7 +13,6 @@ import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.rynekryz.dormguard.bridge.WebAppInterface
 import org.json.JSONObject
 
 class WebViewConfig(private val activity: AppCompatActivity) {
