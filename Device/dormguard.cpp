@@ -3,32 +3,30 @@
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
 
-// ================= WIFI =================
 const char* ssid = "your wifi name";
 const char* password = "your wifi password";
 
-// ================= GOOGLE SHEET =================
 const char* googleScriptURL =
-"google sheet api for door logging";
+"google sheet api url for door logging";
 
-// ================= CONTROL API =================
 const char* ctrlsScriptURL =
-"google sheets api for device controls";
+"google sheets api url for device controls";
 
-// ================= PINS =================
-#define IR_PIN     34
-#define PIR_PIN    19
+#define REED_PIN   4
+#define TRIG_PIN   19
+#define ECHO_PIN   18
 #define BUZZER_PIN 27
-#define LED_PIN_1  32
-#define LED_PIN_2  25
+
+#define LED_PIN    32
 #define LED_COUNT  8
 
-Adafruit_NeoPixel strip1(LED_COUNT, LED_PIN_1, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel strip2(LED_COUNT, LED_PIN_2, NEO_GRB + NEO_KHZ800);
+#define ULTRASONIC_THRESHOLD_CM 32
+#define ULTRASONIC_TIMEOUT_US   25000
+
+Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
-// ================= STATES =================
 bool doorOpen      = false;
 bool lastDoorState = false;
 bool lastDoorRaw   = false;
@@ -39,7 +37,8 @@ bool lastMotionState = false;
 bool lastMotionRaw   = false;
 unsigned long motionDebounceTime = 0;
 
-#define DEBOUNCE_MS 50
+#define DEBOUNCE_MS         50   
+#define MOTION_DEBOUNCE_MS  400  
 
 bool alertActive     = false;
 bool lastAlertActive = false;
@@ -58,9 +57,12 @@ bool apiBuzzerState = true;
 bool apiLampState   = true;
 bool stopAlert      = false;
 
-// ================= QUEUES =================
+int sharedLightCode = 0;
+int lastSentLightCode = -1; 
+
 typedef struct {
-  char state[10];
+  char state[10];   
+  int  lightCode;
 } DoorMessage;
 
 typedef struct {
@@ -70,24 +72,19 @@ typedef struct {
 QueueHandle_t doorQueue;
 QueueHandle_t alertQueue;
 
-// ================= HELPERS =================
 void setAllLEDs(uint32_t color)
 {
   for (int i = 0; i < LED_COUNT; i++)
   {
-    strip1.setPixelColor(i, color);
-    strip2.setPixelColor(i, color);
+    strip.setPixelColor(i, color);
   }
-  strip1.show();
-  strip2.show();
+  strip.show();
 }
 
 void clearAllLEDs()
 {
-  strip1.clear();
-  strip2.clear();
-  strip1.show();
-  strip2.show();
+  strip.clear();
+  strip.show();
 }
 
 void flushQueues()
@@ -106,7 +103,29 @@ void sendAlertState(bool active)
   xQueueSend(alertQueue, &msg, 0);
 }
 
-// SHEET STUFFS (CORE 0)
+void queueDoorLog(const char* doorState, int lightCode)
+{
+  DoorMessage doorMsg;
+  memset(&doorMsg, 0, sizeof(doorMsg));
+  strncpy(doorMsg.state, doorState, sizeof(doorMsg.state) - 1);
+  doorMsg.lightCode = lightCode;
+  xQueueSend(doorQueue, &doorMsg, 0);
+}
+
+long readUltrasonicCM()
+{
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  long duration = pulseIn(ECHO_PIN, HIGH, ULTRASONIC_TIMEOUT_US);
+  if (duration == 0) return -1;
+
+  return duration * 0.034 / 2;
+}
+
 void sheetTask(void *parameter)
 {
   HTTPClient http;
@@ -126,17 +145,13 @@ void sheetTask(void *parameter)
       String val = String(doorMsg.state);
       if (val == "OPEN" || val == "CLOSED")
       {
-        String url = String(googleScriptURL) + "?door=" + val;
+        String url = String(googleScriptURL) + "?door=" + val + "&light=" + String(doorMsg.lightCode);
         http.setTimeout(5000);
         http.begin(url);
         int code = http.GET();
-        if (code > 0) Serial.println("door > " + val);
+        if (code > 0) Serial.println("door > " + val + " light > " + String(doorMsg.lightCode));
         else          Serial.println("door err: " + String(code));
         http.end();
-      }
-      else
-      {
-        Serial.println("door blocked: " + val);
       }
     }
 
@@ -161,7 +176,6 @@ void sheetTask(void *parameter)
   }
 }
 
-// CTRLS STUFFS (CORE 0)
 void controlTask(void *parameter)
 {
   HTTPClient http;
@@ -188,7 +202,6 @@ void controlTask(void *parameter)
       if (code > 0)
       {
         String payload = http.getString();
-        Serial.println("API: " + payload);
 
         StaticJsonDocument<256> doc;
         DeserializationError err = deserializeJson(doc, payload);
@@ -205,7 +218,8 @@ void controlTask(void *parameter)
           bool newLamp   = doc["lamp"].as<int>()   == 1;
 
           portENTER_CRITICAL(&mux);
-          bool prevLamp  = apiLampState;
+          bool prevLamp      = apiLampState;
+          bool configChanged = (newLed != apiLedState) || (newBuzzer != apiBuzzerState) || (newLamp != apiLampState);
           apiLedState    = newLed;
           apiBuzzerState = newBuzzer;
           stopAlert      = newStop;
@@ -221,8 +235,11 @@ void controlTask(void *parameter)
 
           if (newLamp && !prevLamp)
           {
-            bool pirHigh = digitalRead(PIR_PIN) == HIGH;
-            if (pirHigh)
+            portENTER_CRITICAL(&mux);
+            bool irActive = motionDetected;
+            portEXIT_CRITICAL(&mux);
+
+            if (irActive)
             {
               portENTER_CRITICAL(&mux);
               lampOn = true;
@@ -230,8 +247,10 @@ void controlTask(void *parameter)
             }
           }
 
-          Serial.printf("API | LED=%d BUZ=%d STOP=%d LAMP=%d\n",
-                        newLed, newBuzzer, newStop, newLamp);
+          if (configChanged)
+          {
+            Serial.printf("API | LED=%d BUZ=%d LAMP=%d\n", newLed, newBuzzer, newLamp);
+          }
         }
         else
         {
@@ -241,6 +260,9 @@ void controlTask(void *parameter)
       else
       {
         Serial.println("api err: " + String(code));
+        http.end();
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        continue;
       }
 
       http.end();
@@ -250,14 +272,15 @@ void controlTask(void *parameter)
   }
 }
 
-// SENSOR STUFFS (CORE 1)
 void sensorTask(void *parameter)
 {
+  unsigned long lastUltrasonicRead = 0;
+
   for (;;)
   {
     unsigned long now = millis();
 
-    bool doorRaw = digitalRead(IR_PIN) == HIGH;
+    bool doorRaw = digitalRead(REED_PIN) == LOW;
 
     if (doorRaw != lastDoorRaw)
     {
@@ -272,14 +295,14 @@ void sensorTask(void *parameter)
       portENTER_CRITICAL(&mux);
       doorOpen = doorRaw;
       if (doorRaw) doorOpenTime = millis();
+      int currentLightCode = sharedLightCode;
       portEXIT_CRITICAL(&mux);
 
-      Serial.println("door = " + String(doorRaw ? "open" : "closed"));
+      queueDoorLog(doorRaw ? "OPEN" : "CLOSED", currentLightCode);
 
-      DoorMessage doorMsg;
-      memset(&doorMsg, 0, sizeof(doorMsg));
-      strcpy(doorMsg.state, doorRaw ? "OPEN" : "CLOSED");
-      xQueueSend(doorQueue, &doorMsg, 0);
+      portENTER_CRITICAL(&mux);
+      lastSentLightCode = currentLightCode; 
+      portEXIT_CRITICAL(&mux);
 
       if (doorRaw)
       {
@@ -295,11 +318,33 @@ void sensorTask(void *parameter)
         portEXIT_CRITICAL(&mux);
 
         digitalWrite(BUZZER_PIN, LOW);
-        Serial.println("alert = off");
+
+        portENTER_CRITICAL(&mux);
+        bool lampShouldBeOn = lampOn && apiLampState;
+        portEXIT_CRITICAL(&mux);
+
+        if (lampShouldBeOn)
+        {
+          setAllLEDs(strip.Color(255, 255, 255));
+        }
+        else
+        {
+          clearAllLEDs();
+        }
       }
     }
 
-    bool motionRaw = digitalRead(PIR_PIN) == HIGH;
+    bool motionRaw = false;
+    if (now - lastUltrasonicRead > 100)
+    {
+      lastUltrasonicRead = now;
+      long distanceCM = readUltrasonicCM();
+      motionRaw = (distanceCM > 0 && distanceCM <= ULTRASONIC_THRESHOLD_CM);
+    }
+    else
+    {
+      motionRaw = lastMotionRaw;
+    }
 
     if (motionRaw != lastMotionRaw)
     {
@@ -307,7 +352,7 @@ void sensorTask(void *parameter)
       motionDebounceTime = now;
     }
 
-    if ((now - motionDebounceTime >= DEBOUNCE_MS) && (motionRaw != lastMotionState))
+    if ((now - motionDebounceTime >= MOTION_DEBOUNCE_MS) && (motionRaw != lastMotionState))
     {
       lastMotionState = motionRaw;
 
@@ -340,9 +385,10 @@ void sensorTask(void *parameter)
   }
 }
 
-// ALERT STUFFS (CORE 1)
 void alertTask(void *parameter)
 {
+  bool lampIsVisuallyOn = false;
+
   for (;;)
   {
     unsigned long now = millis();
@@ -367,6 +413,34 @@ void alertTask(void *parameter)
       sendAlertState(currentAlertActive);
     }
 
+    bool lampActuallyOn = currentLampOn && currentApiLamp;
+    int lightCode = lampActuallyOn
+                  ? (currentMotion ? 3 : 2)
+                  : (currentMotion ? 1 : 0);
+
+    portENTER_CRITICAL(&mux);
+    sharedLightCode = lightCode;
+    int prevSentLightCode = lastSentLightCode;
+    portEXIT_CRITICAL(&mux);
+
+    if (lightCode != prevSentLightCode)
+    {
+      portENTER_CRITICAL(&mux);
+      lastSentLightCode = lightCode;
+      bool doorForLog = doorOpen;
+      portEXIT_CRITICAL(&mux);
+
+      queueDoorLog(doorForLog ? "OPEN" : "CLOSED", lightCode);
+    }
+
+    if (!currentApiLamp && currentLampOn)
+    {
+      portENTER_CRITICAL(&mux);
+      lampOn = false;
+      portEXIT_CRITICAL(&mux);
+      currentLampOn = false;
+    }
+
     if (currentStopAlert)
     {
       portENTER_CRITICAL(&mux);
@@ -378,7 +452,7 @@ void alertTask(void *parameter)
       beepState = false;
       digitalWrite(BUZZER_PIN, LOW);
       clearAllLEDs();
-      Serial.println("alert = stop");
+      lampIsVisuallyOn = false;
 
       portENTER_CRITICAL(&mux);
       currentLampOn  = lampOn;
@@ -386,7 +460,10 @@ void alertTask(void *parameter)
       portEXIT_CRITICAL(&mux);
 
       if (currentLampOn && currentApiLamp)
-        setAllLEDs(strip1.Color(255, 255, 255));
+      {
+        setAllLEDs(strip.Color(255, 255, 255));
+        lampIsVisuallyOn = true;
+      }
 
       vTaskDelay(10 / portTICK_PERIOD_MS);
       continue;
@@ -394,7 +471,7 @@ void alertTask(void *parameter)
 
     if (currentDoorOpen && !currentAlertSuppressed)
     {
-      if (!currentAlertActive && now - currentDoorOpenTime > 5000) // should be 3 mins but for testing i put 5s
+      if (!currentAlertActive && now - currentDoorOpenTime > 5000)
       {
         portENTER_CRITICAL(&mux);
         alertActive    = true;
@@ -402,7 +479,6 @@ void alertTask(void *parameter)
         portEXIT_CRITICAL(&mux);
 
         lastToggle = millis();
-        Serial.println("alert = on");
       }
 
       portENTER_CRITICAL(&mux);
@@ -421,7 +497,6 @@ void alertTask(void *parameter)
 
           beepState = false;
           digitalWrite(BUZZER_PIN, LOW);
-          Serial.println("alert = timeout");
 
           portENTER_CRITICAL(&mux);
           currentLampOn  = lampOn;
@@ -429,9 +504,15 @@ void alertTask(void *parameter)
           portEXIT_CRITICAL(&mux);
 
           if (currentLampOn && currentApiLamp)
-            setAllLEDs(strip1.Color(255, 255, 255));
+          {
+            setAllLEDs(strip.Color(255, 255, 255));
+            lampIsVisuallyOn = true;
+          }
           else
+          {
             clearAllLEDs();
+            lampIsVisuallyOn = false;
+          }
         }
         else if (now - lastToggle > 250)
         {
@@ -441,13 +522,15 @@ void alertTask(void *parameter)
           digitalWrite(BUZZER_PIN, beepState && currentApiBuzzer ? HIGH : LOW);
 
           if (currentApiLed && beepState)
-            setAllLEDs(strip1.Color(255, 0, 0));
+          {
+            setAllLEDs(strip.Color(255, 0, 0));
+            lampIsVisuallyOn = true;
+          }
           else
+          {
             clearAllLEDs();
-
-          Serial.printf("alert | buz=%d led=%d\n",
-                        (beepState && currentApiBuzzer) ? 1 : 0,
-                        (currentApiLed && beepState)    ? 1 : 0);
+            lampIsVisuallyOn = false;
+          }
         }
 
         vTaskDelay(10 / portTICK_PERIOD_MS);
@@ -464,32 +547,34 @@ void alertTask(void *parameter)
         portEXIT_CRITICAL(&mux);
 
         clearAllLEDs();
+        lampIsVisuallyOn = false;
       }
-      else
+      else if (!lampIsVisuallyOn)
       {
-        setAllLEDs(strip1.Color(255, 255, 255));
+        setAllLEDs(strip.Color(255, 255, 255));
+        lampIsVisuallyOn = true;
       }
     }
-    else
+    else if (lampIsVisuallyOn)
     {
       clearAllLEDs();
+      lampIsVisuallyOn = false;
     }
 
     vTaskDelay(10 / portTICK_PERIOD_MS);
   }
 }
 
-// SETUP
 void setup()
 {
   Serial.begin(115200);
 
-  pinMode(IR_PIN,     INPUT);
-  pinMode(PIR_PIN,    INPUT);
+  pinMode(REED_PIN,   INPUT_PULLUP);
+  pinMode(TRIG_PIN,   OUTPUT);
+  pinMode(ECHO_PIN,   INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
 
-  strip1.begin();
-  strip2.begin();
+  strip.begin();
   clearAllLEDs();
 
   WiFi.begin(ssid, password);
