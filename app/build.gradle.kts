@@ -9,8 +9,8 @@ android {
         applicationId = "com.rynekryz.dormguard"
         minSdk = 31
         targetSdk = 35
-        versionCode = 71
-        versionName = "0.7.1-beta"
+        versionCode = 72
+        versionName = "0.7.2-beta"
     }
     buildTypes {
         release {
