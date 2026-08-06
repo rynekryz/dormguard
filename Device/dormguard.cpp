@@ -1,5 +1,6 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WifiClientSecure.h>
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
 
@@ -12,7 +13,7 @@ const char* googleScriptURL =
 const char* ctrlsScriptURL =
 "google sheets api url for device controls";
 
-#define REED_PIN   4
+#define REED_PIN   13
 #define TRIG_PIN   19
 #define ECHO_PIN   18
 #define BUZZER_PIN 27
@@ -280,7 +281,7 @@ void sensorTask(void *parameter)
   {
     unsigned long now = millis();
 
-    bool doorRaw = digitalRead(REED_PIN) == LOW;
+    bool doorRaw = digitalRead(REED_PIN) == HIGH;
 
     if (doorRaw != lastDoorRaw)
     {
