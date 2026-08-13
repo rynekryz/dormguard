@@ -1,5 +1,63 @@
 (function () {
   const QR_CONFIG_KEYS = ['ctrls_url', 'sheets_url', 'api_url'];
+  const ENC_PREFIX = 'DGENC1:';
+  const PBKDF2_ITERATIONS = 250000;
+
+  const CryptoEngine = (function () {
+    function toBase64(bytes) {
+      let binary = '';
+      bytes.forEach(b => binary += String.fromCharCode(b));
+      return btoa(binary);
+    }
+
+    function fromBase64(str) {
+      const binary = atob(str);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes;
+    }
+
+    async function deriveKey(password, salt) {
+      const enc = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+      return crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+      );
+    }
+
+    async function encrypt(plaintext, password) {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const key = await deriveKey(password, salt);
+      const enc = new TextEncoder();
+      const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plaintext)));
+      const combined = new Uint8Array(salt.length + iv.length + ciphertext.length);
+      combined.set(salt, 0);
+      combined.set(iv, salt.length);
+      combined.set(ciphertext, salt.length + iv.length);
+      return ENC_PREFIX + toBase64(combined);
+    }
+
+    async function decrypt(encoded, password) {
+      const combined = fromBase64(encoded.slice(ENC_PREFIX.length));
+      const salt = combined.slice(0, 16);
+      const iv = combined.slice(16, 28);
+      const data = combined.slice(28);
+      const key = await deriveKey(password, salt);
+      const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+      return new TextDecoder().decode(plaintext);
+    }
+
+    function isEncrypted(text) {
+      return typeof text === 'string' && text.startsWith(ENC_PREFIX);
+    }
+
+    return { encrypt, decrypt, isEncrypted };
+  })();
 
   const QRCodeEngine = (function () {
     let scriptLoaded = false;
@@ -28,7 +86,7 @@
         throw new Error('QR Engine not loaded yet. Call loadLibrary() first.');
       }
 
-      const qr = window.qrcode(0, 'M');
+      const qr = window.qrcode(0, 'L');
       qr.addData(text);
       qr.make();
 
@@ -49,7 +107,90 @@
     return { encode, loadLibrary };
   })();
 
-  // showDialog is defined once in app.js (loaded before this file) and shared via window.showDialog
+  function promptPassword({ title, body, confirmLabel }) {
+    return new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.className = 'md-dialog-overlay';
+
+      overlay.innerHTML = `
+        <style>
+          .pw-input-wrapper {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          .pw-input {
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--md-sys-color-outline, #ccc);
+            background: var(--md-sys-color-surface, #fff);
+            color: var(--md-sys-color-on-surface, #000);
+            font-size: 14px;
+            outline: none;
+          }
+          .pw-input:focus {
+            border-color: var(--md-sys-color-primary, #ccc);
+          }
+          .pw-toggle-visibility {
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            color: var(--md-sys-color-on-surface-variant, #666);
+          }
+        </style>
+        <div class="md-dialog">
+          <span class="material-symbols-rounded md-dialog-icon" style="color: var(--md-sys-color-primary) !important;">lock</span>
+          <div class="md-dialog-title">${title}</div>
+          <div class="md-dialog-body">
+            <p style="font-size:14px; opacity:0.8; margin-bottom:4px;">${body}</p>
+            <div class="pw-input-wrapper">
+              <input type="password" class="pw-input" id="pwPromptInput" placeholder="Password" autocomplete="off">
+              <button class="pw-toggle-visibility" id="pwPromptToggle" type="button">
+                <span class="material-symbols-rounded">visibility</span>
+              </button>
+            </div>
+          </div>
+          <div class="md-dialog-actions">
+            <button class="md-dialog-btn cancel" id="pwPromptCancel">Cancel</button>
+            <button class="md-dialog-btn primary" id="pwPromptConfirm">${confirmLabel}</button>
+          </div>
+        </div>
+      `;
+
+      let settled = false;
+      const finish = value => {
+        if (settled) return;
+        settled = true;
+        close();
+        resolve(value);
+      };
+
+      const close = mountMdOverlay(overlay);
+
+      const input = overlay.querySelector('#pwPromptInput');
+      const toggleBtn = overlay.querySelector('#pwPromptToggle');
+      const confirmBtn = overlay.querySelector('#pwPromptConfirm');
+
+      toggleBtn.addEventListener('click', () => {
+        const isText = input.type === 'text';
+        input.type = isText ? 'password' : 'text';
+        toggleBtn.querySelector('.material-symbols-rounded').textContent = isText ? 'visibility' : 'visibility_off';
+      });
+
+      confirmBtn.addEventListener('click', () => finish(input.value));
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') finish(input.value);
+      });
+      overlay.querySelector('#pwPromptCancel').addEventListener('click', () => finish(null));
+      overlay.addEventListener('click', e => { if (e.target === overlay) finish(null); });
+
+      setTimeout(() => input.focus(), 50);
+    });
+  }
 
   function stampNow() {
     const now = new Date();
@@ -88,8 +229,24 @@
     return JSON.stringify({ v: 1, data: data });
   }
 
-  function backupData() {
-    const payload = JSON.stringify(JSON.parse(getFullStoragePayload()), null, 2);
+  // backup
+  function isEncryptionEnabled() {
+    return localStorage.getItem('backupEncryptionEnabled') === 'true';
+  }
+
+  async function backupData() {
+    let payload = JSON.stringify(JSON.parse(getFullStoragePayload()), null, 2);
+
+    if (isEncryptionEnabled()) {
+      const password = await promptPassword({
+        title: 'Encrypt Backup',
+        body: 'Enter a password to encrypt this backup. You will need it to restore.',
+        confirmLabel: 'Encrypt'
+      });
+      if (!password) return;
+      payload = await CryptoEngine.encrypt(payload, password);
+    }
+
     const filename = `dormguard_backup_${stampNow()}.dormguard`;
 
     if (window.Android && typeof window.Android.saveFile === 'function') {
@@ -129,6 +286,18 @@
       return;
     }
 
+    let qrData = getConfigOnlyPayload();
+
+    if (isEncryptionEnabled()) {
+      const password = await promptPassword({
+        title: 'Encrypt Backup',
+        body: 'Enter a password to encrypt this QR code. You will need it to restore.',
+        confirmLabel: 'Encrypt'
+      });
+      if (!password) return;
+      qrData = await CryptoEngine.encrypt(qrData, password);
+    }
+
     const overlay = document.createElement('div');
     overlay.className = 'md-dialog-overlay';
 
@@ -150,6 +319,10 @@
           display: flex;
           align-items: center;
           justify-content: center;
+          width: 260px;
+          height: 260px;
+          max-width: 100%;
+          box-sizing: border-box;
         }
         .md-dialog-btn-centered {
           display: inline-flex !important;
@@ -170,7 +343,7 @@
           <p style="font-size:14px; opacity:0.8; margin-bottom:8px;">Scan this QR code from another device to transfer your connection settings.</p>
           <div class="qr-export-container">
             <div class="qr-canvas-wrapper" id="qrCanvasWrapper">
-              <canvas id="exportQrCanvas" style="width:220px; height:220px; max-width:100%; image-rendering: pixelated;"></canvas>
+              <canvas id="exportQrCanvas" style="width:100%; height:100%; image-rendering: pixelated;"></canvas>
             </div>
           </div>
         </div>
@@ -187,13 +360,12 @@
     const close = mountMdOverlay(overlay);
 
     const canvas = overlay.querySelector('#exportQrCanvas');
-    const qrData = getConfigOnlyPayload();
 
     const renderQR = () => {
       const { matrix, size } = QRCodeEngine.encode(qrData);
 
-      const pxPerModule = 10;
       const margin = 4;
+      const pxPerModule = 8;
       const canvasSize = (size + margin * 2) * pxPerModule;
 
       canvas.width = canvasSize;
@@ -255,9 +427,48 @@
     }
   }
 
-  window.restoreData = function (jsonContent) {
+  // restore
+  async function resolveContent(rawContent) {
+    const content = rawContent;
+
+    if (CryptoEngine.isEncrypted(content)) {
+      while (true) {
+        const password = await promptPassword({
+          title: 'Encrypted Backup',
+          body: 'This backup is encrypted. Enter the password to restore it.',
+          confirmLabel: 'Decrypt'
+        });
+
+        if (!password) return null;
+
+        try {
+          return await CryptoEngine.decrypt(content, password);
+        } catch (err) {
+          const retry = await new Promise(resolve => {
+            showDialog({
+              icon: 'error',
+              title: 'Wrong Password',
+              body: 'Could not decrypt the backup with that password. Try again?',
+              actions: [
+                { label: 'Cancel', action: () => resolve(false) },
+                { label: 'Retry', isPrimary: true, action: () => resolve(true) }
+              ]
+            });
+          });
+          if (!retry) return null;
+        }
+      }
+    }
+
+    return content;
+  }
+
+  window.restoreData = async function (jsonContent) {
     try {
-      let parsed = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
+      const resolved = await resolveContent(jsonContent);
+      if (resolved === null) return;
+
+      let parsed = typeof resolved === 'string' ? JSON.parse(resolved) : resolved;
       if (typeof parsed === 'string') parsed = JSON.parse(parsed);
 
       const data = parsed.data && typeof parsed.data === 'object' ? parsed.data : parsed;
@@ -297,9 +508,12 @@
     }
   };
 
-  window.restoreConfigOnly = function (jsonContent) {
+  window.restoreConfigOnly = async function (jsonContent) {
     try {
-      let parsed = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
+      const resolved = await resolveContent(jsonContent);
+      if (resolved === null) return;
+
+      let parsed = typeof resolved === 'string' ? JSON.parse(resolved) : resolved;
       if (typeof parsed === 'string') parsed = JSON.parse(parsed);
 
       const data = parsed.data && typeof parsed.data === 'object' ? parsed.data : parsed;
@@ -385,6 +599,15 @@
         { label: 'Cancel' },
         { label: 'Choose File', isPrimary: true, action: triggerFilePicker }
       ]
+    });
+  }
+
+  const encryptSwitch = document.getElementById('encryptBackupSwitch');
+  if (encryptSwitch) {
+    encryptSwitch.checked = isEncryptionEnabled();
+
+    encryptSwitch.addEventListener('change', () => {
+      localStorage.setItem('backupEncryptionEnabled', encryptSwitch.checked ? 'true' : 'false');
     });
   }
 

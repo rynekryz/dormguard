@@ -532,6 +532,14 @@
                   </div>
                </div>
                <div class="settings-header">Data Management</div>
+               <div class="settings-item" id="encryptBackupItem">
+                  <span class="material-symbols-rounded">lock</span>
+                  <span class="setting-text">Encrypt Backup</span>
+                  <label class="md-switch">
+                     <input type="checkbox" id="encryptBackupSwitch">
+                     <span></span>
+                  </label>
+               </div>
                <div class="settings-item" id="backupBtn">  
                   <span class="material-symbols-rounded">backup</span>  
                   <span class="setting-text">Backup</span>
@@ -564,7 +572,7 @@
                <img src="icon.png" alt="Icon" id="dormguard" />
                <div class="info-text">
                   <div>Dorm Guard</div>
-                  <div class="ver">v0.7.2-beta (072)</div>
+                  <div class="ver">v0.8.0-beta (080)</div>
                </div>
             </div>
             <div class="wavy-divider">_______________________________</div>
@@ -705,14 +713,14 @@
                </div>
             </div>
             <div id="licenseBox">
-               <div id="licenseTitle">License <span class="material-symbols-rounded">balance</span></div>
                <ul class="license">
-                  <li class="license-item">
+                  <li class="license-item" onclick="confirmOpenInBrowser('https://github.com/rynekryz/dormguard/blob/main/LICENSE', 'GitHub')">
                      <span class="material-symbols-rounded">info</span>
-                     <div class="license-info">
-                        <span class="sysinfo-name">GNU General Public License v3.0</span>
-                        <span class="sysinfo-value">Free, open source software. You may use, study, share and improve this software.</span>
-                     </div>
+                        <div class="license-info">
+                           <span class="sysinfo-name">Licensed under: GNU General Public License v3.0</span>
+                           <span class="sysinfo-value">Free, open source software. You may use, study, share and improve this software.</span>
+                        </div>
+                     <span class="material-symbols-rounded license-link">open_in_new</span>
                   </li>
                </ul>
             </div>
@@ -743,7 +751,7 @@
                   </li>
                </ul>
             </div>
-            <div class="app-version">300726</div>
+            <div class="app-version">130826</div>
          </div>
       </main>
       <nav class="bottom-nav">
