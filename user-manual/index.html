@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flipbook</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+<body>
+
+<div id="stage">
+  <div id="bookWrap">
+    <div id="book"></div>
+  </div>
+</div>
+
+<div id="loader">
+  <div class="loaderRing"></div>
+  <div id="loaderText">Loading document</div>
+</div>
+
+<header id="topBar">
+  <div class="barGroup">
+    <button id="btnMenu" class="iconBtn" aria-label="Table of contents">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+    </button>
+    <span id="docTitle">Flipbook</span>
+  </div>
+  <div class="barGroup">
+    <button id="btnLayout" class="iconBtn" aria-label="Toggle layout">
+      <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 12h12"/></svg>
+    </button>
+    <button id="btnFullscreen" class="iconBtn" aria-label="Toggle fullscreen">
+      <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+    </button>
+  </div>
+</header>
+
+<footer id="bottomBar">
+  <button id="btnPrev" class="iconBtn" aria-label="Previous page">
+    <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+  </button>
+
+  <div id="pageJump">
+    <input id="pageInput" type="text" inputmode="numeric" aria-label="Page number" value="1">
+    <span id="pageSep">/</span>
+    <span id="pageTotal">–</span>
+  </div>
+
+  <button id="btnNext" class="iconBtn" aria-label="Next page">
+    <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+  </button>
+
+  <div id="zoomGroup">
+    <button id="btnZoomOut" class="iconBtn small" aria-label="Zoom out">
+      <svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>
+    </button>
+    <div id="zoomLevel">100%</div>
+    <button id="btnZoomIn" class="iconBtn small" aria-label="Zoom in">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <button id="btnZoomReset" class="iconBtn small" aria-label="Reset zoom">
+      <svg viewBox="0 0 24 24"><path d="M4 4v6h6M20 20v-6h-6M20 4l-7 7M4 20l7-7"/></svg>
+    </button>
+  </div>
+</footer>
+
+<div id="scrubberWrap">
+  <input id="scrubber" type="range" min="1" max="1" value="1" step="1" aria-label="Jump to page">
+</div>
+
+<aside id="tocPanel">
+  <div id="tocHead">
+    <span>Pages</span>
+    <button id="btnTocClose" class="iconBtn" aria-label="Close panel">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div id="tocGrid"></div>
+</aside>
+<div id="tocScrim"></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
