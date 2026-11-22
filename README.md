@@ -1,8 +1,8 @@
 <div align="center">
 <img src="icon.png" width="160" height="160" style="display: block; margin: 0 auto"/>
 <h1>DormGuard</h1>
-<p>Student dorm security device (or maybe any other place too)</p>
-<p>Android app for DormGuard. This repo contains the software.</p>
+<p>A dorm security device that pairs an Android app with an ESP32.</p>
+<p>Real-time door alerts, a motion lamp, and event logs, with the firmware included in <code>Device/</code>.</p>
 </div>
 <p align="center">
   <a href="https://github.com/rynekryz/dormguard/stargazers"><img src="assets/badges/stars.svg" alt="GitHub stars" height="30"/></a>
@@ -12,26 +12,11 @@
   <img src="assets/badges/kotlin.svg" alt="Kotlin"/>
 </p>
 
-## Building the APK
+<p align="center">
+  <a href="https://github.com/rynekryz/dormguard/releases"><img src="assets/badges/getgithub.svg" alt="Get it on GitHub" height="56"/></a>
+</p>
 
-### Requirements
-- Android SDK 35+ (or Android Studio)
-- Java 11+
-- Git
-
-### Build with Android Studio
-1. Clone the repo and open it in Android Studio
-2. Wait for Gradle sync
-3. Connect an Android device or use an emulator
-4. Click **Run** to build and install
-
-### Build from command line
-```bash
-git clone https://github.com/rynekryz/dormguard.git
-cd dormguard
-./gradlew build
-```
-APK location: `app/build/outputs/apk/debug/app-debug.apk`
+---
 
 ## Screenshots
 
@@ -44,35 +29,80 @@ APK location: `app/build/outputs/apk/debug/app-debug.apk`
 <img src="/Screenshots/28532.png" width="30%" />
 </div>
 
+---
+
 ## Features
 
-- Real-time door status monitoring via ESP32 --> App
-- Push alert when door left open too long
-- Remote alert disable button from the app (Anytime, anywhere)
-- Alert stop until door reopened again if stopped from app
-- Auto alert timeout after 20s if not manually stopped
-- PIR motion-triggered auto lamp control
-- Remote lamp enable/disable toggle
-- NeoPixel LED strip visual alert indicator (blink blink) and can also become a lamp
-- Buzzer beep beep Beep BEEP alert (can be enable/disable via in app switch)
-- LED alert indicator (can be enable/disable via app too)
-- Door open/close events logged to Google Sheets (free database lol)
-- Alert state synced between ESP and app via Google Apps Script
-- Vibration notification on alert trigger
-- Vibration toggle in settings
-- Logs list with timestamp and date
-- Last opened time display
-- Full and latest 50 records CSV export
-- Google Sheets database link viewer
-- Dark mode and light mode support
-- High contrast mode
-- Reduce motion toggle (some people hate animation)
-- Material design 3 Expressive
+- Real-time door status, straight from the ESP32 to your phone
+- An alert when the door's been open too long
+- Silence it from anywhere, and it stays quiet until the door reopens
+- Auto timeout after 20s in case you forget to stop it
+- PIR motion auto lamp, with a remote on/off toggle
+- NeoPixel strip that blinks as an alert and doubles as a lamp (blink blink)
+- Buzzer that goes beep beep Beep BEEP, with a switch to mute it
+- LED indicator you can toggle from the app too
+- Door events logged to Google Sheets (free database lol)
+- Alert state stays in sync between the ESP and the app through Apps Script
+- Vibration on alerts, with a toggle in settings
+- Logs with date and time, last opened, and CSV export
+- Dark, light, high contrast, and a reduce motion option for people who hate animation
+- Material 3 Expressive
 - etc.
+
+---
+
+## Technical Stack
+
+- **UI:** Android Views, WebView and Material 3
+- **Bridge:** JavaScript interface between the WebView and Kotlin
+- **Alerts:** foreground service and notifications
+- **Device:** ESP32 firmware (Arduino C++)
+- **Language:** Kotlin and C++
+- **Build:** Gradle (Kotlin DSL)
+
+---
+
+## Building
+
+You'll need Android SDK 35+ (or Android Studio) and Java 11+.
+
+### In Android Studio
+
+1. Clone the repo and open it in Android Studio.
+2. Connect a device or start an emulator, then hit **Run**.
+
+### From the command line
+
+```bash
+git clone https://github.com/rynekryz/dormguard.git
+cd dormguard
+./gradlew build
+```
+
+The APK ends up in `app/build/outputs/apk/debug/app-debug.apk`.
+
+---
+
+## Project Structure
+
+```
+DormGuard/
+├── app/src/main/java/com/rynekryz/dormguard/
+│   ├── MainActivity.kt
+│   ├── bridge/
+│   ├── notifications/
+│   └── webview/
+├── Device/
+│   ├── dormguard.cpp
+│   └── notes.txt
+└── user-manual/
+```
+
+---
 
 ## License
 
-Licensed under GPL-3.0. See [LICENSE](LICENSE) for details.
+Licensed under GPL-3.0. See [LICENSE](LICENSE).
 
 <div align="center">
 <strong>Made with ♥︎ by Ryne</strong>
